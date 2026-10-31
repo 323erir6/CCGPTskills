@@ -24,3 +24,5 @@ jobs:
         run: |
           lua5.3 tests/math3d_test.lua
           lua5.3 tests/pid_test.lua
+          lua5.3 tests/round_test.lua
+          lua5.3 tests/sublevel_pose_test.lua
