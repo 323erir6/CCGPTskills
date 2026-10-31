@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "id": "enhanced_detector_radar",
+  "mod": "Enhanced Detector Radar",
+  "version": "1.0.5",
+  "minecraft": "1.21.1",
+  "source_url": "https://github.com/323erir6/Enhanced-Detector-Radar",
+  "source_commit": "e14b41b64a0d28871d69ec0bb51a2ee2a2ba1043",
+  "interfaces": [
+    {
+      "name": "radar",
+      "kind": "peripheral",
+      "notes": "Extends NeoPeripheral scanForSubLevels rows with velocity and size fields. Does not create a new radar type.",
+      "methods": [
+        {
+          "name": "scanForSubLevels",
+          "arguments": [
+            "number?: radius",
+            "boolean?: absolute"
+          ],
+          "returns": [
+            "table[]"
+          ],
+          "verification": "source-confirmed",
+          "source_path": "src/main/java/dev/radarcompat/enhanceddetector/mixin/RadarPeripheralMixin.java",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "sable_engine",
+      "kind": "peripheral",
+      "notes": "Extends NeoPeripheral engine; impulses are world-axis impulses, not forces.",
+      "methods": [
+        {
+          "name": "getPhysicsState",
+          "arguments": [],
+          "returns": [
+            "table?"
+          ],
+          "verification": "source-confirmed",
+          "source_path": "src/main/java/dev/radarcompat/enhanceddetector/mixin/SableEnginePeripheralMixin.java",
+          "description": ""
+        },
+        {
+          "name": "applyControlImpulse",
+          "arguments": [
+            "number: lx",
+            "number: ly",
+            "number: lz",
+            "number: ax",
+            "number: ay",
+            "number: az"
+          ],
+          "returns": [
+            "boolean"
+          ],
+          "verification": "source-confirmed",
+          "source_path": "src/main/java/dev/radarcompat/enhanceddetector/mixin/SableEnginePeripheralMixin.java",
+          "description": ""
+        },
+        {
+          "name": "stepControl",
+          "arguments": [
+            "number: lx",
+            "number: ly",
+            "number: lz",
+            "number: ax",
+            "number: ay",
+            "number: az"
+          ],
+          "returns": [
+            "table?"
+          ],
+          "verification": "source-confirmed",
+          "source_path": "src/main/java/dev/radarcompat/enhanceddetector/mixin/SableEnginePeripheralMixin.java",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "playerDetector",
+      "kind": "peripheral",
+      "notes": "Enhances Advanced Peripherals getPlayerPos default precision to 3 decimal places. Exact type name is version-dependent.",
+      "methods": [
+        {
+          "name": "getPlayerPos",
+          "arguments": [
+            "string: username",
+            "number?: precision"
+          ],
+          "returns": [
+            "table?"
+          ],
+          "verification": "source-confirmed",
+          "source_path": "src/main/java/dev/radarcompat/enhanceddetector/mixin/PlayerDetectorPrecisionMixin.java",
+          "description": ""
+        }
+      ]
+    }
+  ]
+}

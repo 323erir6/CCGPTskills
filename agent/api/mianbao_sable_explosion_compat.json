@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "id": "mianbao_sable_explosion_compat",
+  "mod": "Mianbao Sable Explosion Compat",
+  "version": "1.2.9",
+  "minecraft": "1.21.1",
+  "source_url": "https://github.com/323erir6/MianbaoSableExplosionCompat",
+  "source_commit": "2335b47b2fb4cf9cee9375424d8b22b5f83ae401",
+  "interfaces": [
+    {
+      "name": "explosive",
+      "kind": "peripheral",
+      "methods": [
+        {
+          "name": "detonate",
+          "arguments": [],
+          "returns": [
+            "boolean"
+          ],
+          "verification": "source-confirmed",
+          "source_path": "src/main/java/dev/mianbaosablecompat/peripheral/ExplosivePeripheral.java",
+          "description": ""
+        }
+      ]
+    }
+  ]
+}

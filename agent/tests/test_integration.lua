@@ -1,0 +1,15 @@
+-- EN: Integration examples exercise real library logic with synthetic physics input.
+-- RU: Интеграционные примеры проверяют библиотеку на синтетических данных.
+local Mock = require('agent.mocks.sublevel')
+local poseMath = require('lib.sublevel_pose')
+local math3d = require('lib.math3d')
+local ship = Mock.new()
+local api = ship:api()
+local world = poseMath.localToWorld({x=10,y=2,z=-3},api.getLogicalPose())
+assert(world.x==10 and world.y==2 and world.z==-3)
+ship:setVelocity({x=12,y=0,z=5})
+local v = api.getVelocity()
+local forward = poseMath.speedAlongLocalAxis(v,{x=0,y=0,z=1},api.getLogicalPose())
+assert(forward==5)
+assert(math3d.length(v)==13)
+print('synthetic integration tests passed')

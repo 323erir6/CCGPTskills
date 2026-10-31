@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "id": "example_mod",
+  "mod": "Example Mod",
+  "version": "0.0.0",
+  "minecraft": "1.21.1",
+  "source_url": "https://github.com/owner/repo",
+  "source_commit": "replace-with-git-commit-sha",
+  "interfaces": [
+    {
+      "name": "sample_device",
+      "kind": "peripheral",
+      "methods": [
+        {
+          "name": "getStatus",
+          "arguments": [],
+          "returns": ["table"],
+          "verification": "unverified",
+          "source_path": "src/main/java/path/Example.java"
+        }
+      ]
+    }
+  ]
+}
