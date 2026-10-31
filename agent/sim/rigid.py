@@ -66,7 +66,7 @@ class Body:
                 "unresolved_shapes":self.geometry.unresolved}
 
 class World:
-    def __init__(self,physics_hz=120,gravity=(0.,-9.81,0.),max_pair_checks=100000):
+    def __init__(self,physics_hz=120,gravity=(0.,-9.81,0.),max_pair_checks=100000,ground_y=None,ground_friction=0.5):
         if not isinstance(physics_hz,int) or physics_hz<20 or physics_hz>2000 or physics_hz%20:
             raise ValueError("physics_hz must be multiple of 20 between 20 and 2000")
         self.physics_hz=physics_hz
@@ -79,6 +79,11 @@ class World:
         self.events=[]
         self.contact_checks=0
         self._contact_pairs=set()
+        if ground_y is not None and not isfinite(ground_y):raise ValueError('invalid ground height')
+        if not isfinite(ground_friction) or ground_friction<0:raise ValueError('invalid ground friction')
+        self.ground_y=ground_y
+        self.ground_friction=ground_friction
+        self._grounded_ids=set()
 
     def add(self,geometry:Compound,*,mass=1.,position=(0.,0.,0.),velocity=(0.,0.,0.),
             orientation=(1.,0.,0.,0.),angular_velocity=(0.,0.,0.),damping=0.,restitution=0.,static=False):
@@ -113,6 +118,7 @@ class World:
                     velocity=mul(add(b.velocity,mul(acceleration,dt)),exp(-b.damping*dt))
                     b.velocity=velocity
                 self._move(dt)
+                self._resolve_flat_ground(dt)
                 for b in self.bodies.values():
                     if b.static:continue
                     b.orientation=qstep(b.orientation,b.angular_velocity,dt)
@@ -167,6 +173,36 @@ class World:
             self.events.append({"event":"body_contact","a":a_id,"b":b_id,
                                 "normal":n,"time":self.time+time})
         self._contact_pairs={pair}
+
+    def _resolve_flat_ground(self,dt):
+        """Contact with a static horizontal plane using rotated voxel geometry.
+
+        Friction is approximate Coulomb damping, not the actual Rapier manifold solver.
+        """
+        if self.ground_y is None:return
+        grounded=set()
+        for body in self.bodies.values():
+            if body.static:continue
+            boxes=body.geometry.boxes(body.position,body.orientation,pivot=body.com)
+            if not boxes:continue
+            bottom=min(box.center[1]-sum(abs(box.axes[j][1])*box.extent[j]
+                        for j in range(3)) for box in boxes)
+            if bottom>self.ground_y+1e-8:continue
+            body.position=(body.position[0],body.position[1]+max(0,self.ground_y-bottom),body.position[2])
+            if body.velocity[1]<0:
+                body.velocity=(body.velocity[0],0.,body.velocity[2])
+            vx,vy,vz=body.velocity
+            horizontal=sqrt(vx*vx+vz*vz)
+            normal_acceleration=max(0.,-self.gravity[1])
+            reduction=self.ground_friction*normal_acceleration*dt
+            if horizontal>0 and reduction>0:
+                scale=max(0.,horizontal-reduction)/horizontal
+                body.velocity=(vx*scale,vy,vz*scale)
+            grounded.add(body.id)
+            if body.id not in self._grounded_ids:
+                self.events.append({"event":"terrain_contact","body":body.id,
+                                    "ground_y":self.ground_y,"time":self.time+dt})
+        self._grounded_ids=grounded
 
     def snapshot(self):
         return {"status":"ok","tick":self.tick,"substep":self.physics_step,
