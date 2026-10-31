@@ -36,15 +36,19 @@ jobs:
           sudo apt-get install -y lua5.3
       - name: Compile Lua files
         run: |
-          find lib tests examples agent/mocks agent/tests -type f -name '*.lua' -print0 | xargs -0 -r -n 1 luac5.3 -p
+          find lib tests examples agent/mocks agent/tests agent/sim agent/scenarios -type f -name '*.lua' -print0 | xargs -0 -r -n 1 luac5.3 -p
       - name: Check Python syntax
-        run: python3 -m compileall -q agent/scripts agent/tests
+        run: python3 -m compileall -q agent/scripts agent/tests agent/sim
       - name: Run agent Python unit tests
         run: python3 -m unittest discover -s agent/tests -p 'test_*.py' -v
+      - name: Run headless world simulator tests
+        run: |
+          lua5.3 agent/tests/test_world.lua
+          lua5.3 agent/sim/run.lua agent/scenarios/falling_block.lua > agent-results-world.json
       - name: Run deterministic benchmark
         run: python3 agent/scripts/benchmark.py --output agent-results/benchmark.json
       - name: Static Lua review
-        run: python3 agent/scripts/review.py lib examples agent/mocks
+        run: python3 agent/scripts/review.py lib examples agent/mocks agent/sim
       - name: Package CraftOS Lua scripts
         run: |
           mkdir -p dist
@@ -61,6 +65,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: gocode-benchmark-${{ github.run_id }}
-          path: agent-results/
+          path: |
+            agent-results/
+            agent-results-world.json
           if-no-files-found: warn
           retention-days: 14

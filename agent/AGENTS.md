@@ -83,3 +83,13 @@ Before substantial work inspect `agent/context/` templates when instantiated by 
 ## Limitations
 
 GitHub Actions is a build/test executor, not a GPT inference engine. A fully automated multi-commit reasoning loop requires a separate runner and model access, not provided by this repository. Live iterations use the GitHub connector and active conversation tools. A mock is not equivalent to the actual game engine.
+
+## Text-only simulator for agent verification
+
+Before implementing a complex CC:Tweaked control program, use `agent/sim/` to reproduce **deterministic** motion, timing and peripheral scenarios where applicable, then check the exact source-version API manifest. Treat `agent/sim/coverage.json` as the explicit implemented/unimplemented boundary. The synthetic body model is not Minecraft 1.21.1, Rapier, Sable 2.0.5 or any mod's executable code. Do not silently promote simulator checks to in-game verification.
+
+- Add a failing synthetic test for each relevant bug; modify one hypothesis; rerun CI.
+- Keep reproducible scenario inputs and test expected outputs. Do not fabricate a Minecraft reference trace.
+- Prefer measured real-game traces or verified source behavior for fidelity improvements; report deviations with `agent/sim/compare.py`.
+- Do not assert full modpack support, native block collisions or true Minecraft scheduling.
+- Text-only JSON output and explicit pass/fail evidence are mandatory for new simulator scenarios.

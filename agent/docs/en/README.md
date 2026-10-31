@@ -98,3 +98,7 @@ The marker is **request-scoped**: it automatically selects the GOCODE engineerin
 Treat `verified`, `partial`, `blocked` and `not tested` as different outcomes. Do not stop merely because the first build succeeded if a listed task remains actionable. Conversely, do not enter an unbounded retry loop or claim a task is 100% complete without adequate evidence. External Minecraft integration tests that were not run must be reported as not tested. Report blockers and exact next actions if resources, permissions or tools prevent further progress.
 
 **Stop control:** use the interface's Stop generating control to interrupt an active response. A later `[gostop]` or `gostop` message disables future execution-loop instructions (and `gostop` also disables GOCODE). These text commands do not provide a communication channel into a still-running generation. The platform can terminate or limit any request; the marker cannot override those limits or schedule background work.
+
+## 12. Versioned text-only simulation world
+
+The incremental voxel, rigid-body and CC:Tweaked simulator has an independent [English specification](simulator.md) and a machine-readable [coverage manifest](../../sim/coverage.json). Its physics are explicitly approximate. It is used for reproducible regression tests, not as proof of live Minecraft compatibility.

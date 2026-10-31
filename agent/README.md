@@ -17,3 +17,13 @@ The infrastructure is currently hosted in this repository to keep the reusable C
 Use `[goloop]` as a standalone line followed by a checklist of tasks to request continuous build/test/review iterations within a single response. Use `[gostop]` for future-turn deactivation or the UI's Stop generating control to interrupt the ongoing response. This is bounded by available time, tools and permissions; it is not unlimited or asynchronous execution.
 
 Для циклического выполнения задач одного сообщения укажите `[goloop]` отдельной строкой перед списком задач. `[gostop]` отменяет режим для последующих сообщений; текущую генерацию можно прервать штатной кнопкой остановки. Системные ограничения времени и инструментов сохраняются.
+
+## Text-only physics and CC:Tweaked simulator / Физика и CC без графики
+
+- [English: mechanics, models, limitations, commands](docs/en/simulator.md)
+- [Русский: механики, точность, ограничения, команды](docs/ru/simulator.md)
+- Executable modules: [sim/](sim/); example: [falling_block.lua](scenarios/falling_block.lua).
+- Coverage and unimplemented features: [coverage.json](sim/coverage.json).
+- Regression tests: [test_world.lua](tests/test_world.lua).
+
+Run: `lua5.3 agent/sim/run.lua agent/scenarios/falling_block.lua`.
