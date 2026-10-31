@@ -25,6 +25,10 @@ This independent English documentation tree targets the **audited Minecraft 1.21
 | [Sable Autonomous Chunk Loader](mods/sable-autonomous-chunk-loader.md) | Indirect radar behavior |
 | [Complete audited pack manifest](modpack-audit.md) | Every installed/disabled JAR and CC reference scan |
 
+## Coding-agent engineering tools
+
+[Automated checks, offline peripheral mocks, API manifests and benchmark framework](gocode-agent.md).
+
 ## Source and test status
 
 Documentation based on [CCGPTskills](https://github.com/323erir6/CCGPTskills), the referenced source repositories and archived mod binaries. Java bytecode presence can prove an integration reference, but **cannot prove all public methods are callable from Lua**. Only `@LuaFunction` / explicit dispatch and runtime `peripheral.getMethods` do that.

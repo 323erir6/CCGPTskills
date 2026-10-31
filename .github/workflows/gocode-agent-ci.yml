@@ -43,6 +43,19 @@ jobs:
         run: python3 -m unittest discover -s agent/tests -p 'test_*.py' -v
       - name: Run deterministic benchmark
         run: python3 agent/scripts/benchmark.py --output agent-results/benchmark.json
+      - name: Static Lua review
+        run: python3 agent/scripts/review.py lib examples agent/mocks
+      - name: Package CraftOS Lua scripts
+        run: |
+          mkdir -p dist
+          zip -q -r dist/cc-tweaked-lua-toolkit.zip lib examples
+      - name: Upload CraftOS toolkit
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cc-tweaked-lua-toolkit-${{ github.run_id }}
+          path: dist/cc-tweaked-lua-toolkit.zip
+          retention-days: 14
       - name: Upload test report
         if: always()
         uses: actions/upload-artifact@v4
