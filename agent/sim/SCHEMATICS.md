@@ -30,3 +30,14 @@ python3 agent/sim/schematic_cli.py structure.nbt --shape-registry shapes.json --
 ```
 
 See `shapes.example.json` for the schema **only**: the example records are invented test fixtures, not verified data. Generate real data by querying Minecraft/NeoForge's `BlockState#getCollisionShape` for the installed block states, ideally including neighbor context for connection-dependent blocks. Some block shapes depend on world state, so the registry is only sufficient for context-independent blocks. This importer does not yet include such a game-side extractor.
+
+## Run construction physics directly from `.nbt`
+
+```sh
+python3 agent/sim/simulate_schematic.py structure.nbt --ticks 100 --hz 120 --trace --out agent-results/physics.json
+python3 agent/sim/simulate_schematic.py first.nbt second.nbt --layout positions.json --ticks 20
+```
+
+`positions.json` is an ordered array of bodies (including distinct Photomancy sublevels). Each entry may contain `position` `[x,y,z]`, `orientation` `[w,x,y,z]`, `velocity`, `angular_velocity`, and `mass`. Multiple bodies **require** an explicit layout so that the simulator never invents real Sable positions. Any Photomancy source `relative_pose` remains in output metadata as an unmodified reference for source-version-validated placement adapters.
+
+Every report includes voxel count, number of collidable boxes, list of unresolved shapes, applied positioning source, contact events, mass/inertia and optional per-tick traces. The dynamics are an explicit approximation, not Rapier's contact solver.

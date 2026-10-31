@@ -117,3 +117,7 @@ Full implementation guide: [SCHEMATICS.md](../../sim/SCHEMATICS.md). Relevant so
 ### State-dependent collision geometry
 
 For exact supported modded shapes, provide a versioned collision registry whose keys include the actual block ID and properties. Each value is a list of local-space voxel boxes. Use `--shape-registry shapes.json --strict-shapes` to make unsupported states fail instead of silently substituting a full cube. The included `shapes.example.json` is a schema illustration, **not a captured Minecraft shape database**. Dynamic neighbor-dependent collision shapes still require context-specific extraction.
+
+### Headless physics replay from NBT
+
+Use `python3 agent/sim/simulate_schematic.py construction.nbt --ticks 100 --trace --out agent-results/physics.json` for deterministic compound-voxel physics tests. For multiple schematics or Photomancy sublevels, supply `--layout` with explicit world poses, masses and velocities. The output records every sublevel's source pose metadata unchanged alongside the simulated pose, so missing origin mappings cannot silently masquerade as correct world transforms.

@@ -101,6 +101,17 @@
         "-v"
       ],
       "expected": ""
+    },
+    {
+      "id": "schematic_physics_replay",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "agent.tests.test_simulate_schematic",
+        "-v"
+      ],
+      "expected": ""
     }
   ]
 }
