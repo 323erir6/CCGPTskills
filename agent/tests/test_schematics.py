@@ -8,7 +8,7 @@ import unittest
 from pathlib import Path
 from agent.sim.nbt import loads, NBTError
 from agent.sim.schematics import normalize, load, SchematicError
-from agent.sim.geometry import Compound, oriented_box, intersects, swept_collision
+from agent.sim.geometry import Compound, ShapeRegistry, oriented_box, intersects, swept_collision
 
 
 def tag(name, typ, payload):
@@ -116,6 +116,17 @@ class TestSchematicIO(unittest.TestCase):
         toi=a.sweep(b,(1000,0,0),0.1,position_b=(40,0,0))
         self.assertIsNotNone(toi)
         self.assertAlmostEqual(.039,toi[0],places=8)
+
+    def test_versioned_shape_registry(self):
+        state={"name":"example:thin_plate","properties":{"facing":"north"}}
+        construct={"palette":[state],"blocks":[{"pos":[0,1,0],"state":0}]}
+        with self.assertRaisesRegex(ValueError,"unresolved Minecraft VoxelShape"):
+            Compound.from_construct(construct,strict_shapes=True)
+        registry=ShapeRegistry({"schema_version":1,"target":{"minecraft":"1.21.1"},
+            "shapes":{"example:thin_plate[facing=north]": [[0,0,0,1,0.125,1]]}})
+        exact=Compound.from_construct(construct,registry=registry,strict_shapes=True)
+        self.assertEqual([],exact.unresolved)
+        self.assertEqual(((0,1,0),(1,1.125,1)),exact.primitives[0][0])
 
     def test_rotation_slab(self):
         a=oriented_box(((0,0,0),(1,.5,1)),orientation=(math.cos(math.pi/4),0,math.sin(math.pi/4),0))

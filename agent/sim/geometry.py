@@ -9,6 +9,8 @@ from dataclasses import dataclass
 from math import sqrt, floor, inf, isfinite
 from itertools import product
 from typing import Iterable
+import json
+from pathlib import Path
 
 Vector=tuple[float,float,float]
 Box=tuple[Vector,Vector]
@@ -90,12 +92,53 @@ def swept_collision(a:OBB,b:OBB,relative_velocity:Vector,seconds:float)->tuple[f
     return (max(0,enter),normal or (0,0,0))
 
 
-def collision_shape(block_name:str, properties:dict)->tuple[list[Box],str]:
+def state_key(block_name:str,properties:dict)->str:
+    if not properties:return block_name
+    return block_name+"["+",".join(f"{k}={properties[k]}" for k in sorted(properties))+"]"
+
+class ShapeRegistry:
+    """State-qualified, externally recorded Minecraft VoxelShape boxes.
+
+    Source must be a version-qualified extraction of BlockState#getCollisionShape
+    from the actual modpack, not an approximation from rendered models.
+    """
+    def __init__(self,records:dict):
+        if records.get("schema_version")!=1 or not isinstance(records.get("shapes"),dict):
+            raise ValueError("invalid collision shape registry")
+        self.source=records.get("source", "unknown")
+        self.target=records.get("target",{})
+        self.shapes={}
+        for key, boxes in records["shapes"].items():
+            if not isinstance(key,str) or not isinstance(boxes,list):
+                raise ValueError("invalid shape registry entry")
+            parsed=[]
+            for b in boxes:
+                if not isinstance(b,list) or len(b)!=6 or not all(isinstance(v,(int,float)) and isfinite(v) for v in b):
+                    raise ValueError("invalid shape box coordinates")
+                lo,hi=tuple(b[:3]),tuple(b[3:])
+                if not all(lo[i]<hi[i] for i in range(3)):
+                    raise ValueError("invalid shape bounds")
+                parsed.append((lo,hi))
+            self.shapes[key]=parsed
+
+    @classmethod
+    def from_json(cls,path:Path):return cls(json.loads(Path(path).read_text("utf-8")))
+
+    def lookup(self,name:str,props:dict)->list[Box]|None:
+        key=state_key(name,props)
+        if key in self.shapes:return self.shapes[key]
+        return self.shapes.get(name)
+
+
+def collision_shape(block_name:str, properties:dict,registry:ShapeRegistry|None=None)->tuple[list[Box],str]:
     """Return shapes plus accuracy: exact_known / conservative / noncollidable_known.
 
     Name/Properties data survives for every block; unsupported shapes use full
     cubes to avoid false negatives, and always report unresolved accuracy.
     """
+    if registry is not None:
+        registered=registry.lookup(block_name,properties)
+        if registered is not None:return registered,"registry_verified"
     if block_name in ("minecraft:air","minecraft:cave_air","minecraft:void_air"):
         return [],"noncollidable_known"
     if block_name in ("minecraft:water","minecraft:lava"):
@@ -120,7 +163,8 @@ class Compound:
     blocks:int
 
     @classmethod
-    def from_construct(cls, construct:dict)->'Compound':
+    def from_construct(cls, construct:dict,*,registry:ShapeRegistry|None=None,
+                       strict_shapes:bool=False)->'Compound':
         primitives=[];unresolved=[]
         palette=construct["palette"]
         for record in construct["blocks"]:
@@ -129,8 +173,12 @@ class Compound:
             if record.get("unavailable"):
                 unresolved.append(name+":unavailable_palette")
                 continue
-            shapes,accuracy=collision_shape(name,state.get("properties",{}))
-            if accuracy=="conservative":unresolved.append(name)
+            props=state.get("properties",{})
+            shapes,accuracy=collision_shape(name,props,registry)
+            if accuracy=="conservative":
+                unresolved.append(state_key(name,props))
+                if strict_shapes:
+                    raise ValueError("unresolved Minecraft VoxelShape: "+state_key(name,props))
             xyz=record["pos"]
             for lo,hi in shapes:
                 primitives.append(((add(tuple(xyz),lo),add(tuple(xyz),hi)),record["state"]))

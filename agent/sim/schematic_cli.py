@@ -8,7 +8,7 @@ import sys
 if __package__ in (None, ""):
     sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
 from agent.sim.schematics import load, SchematicError
-from agent.sim.geometry import Compound
+from agent.sim.geometry import Compound, ShapeRegistry
 
 
 def main(argv=None)->int:
@@ -16,11 +16,15 @@ def main(argv=None)->int:
     parser.add_argument("schematic",type=Path)
     parser.add_argument("--out",type=Path,help="write normalized geometry JSON fixture")
     parser.add_argument("--summary",action="store_true",help="print only geometry summary")
+    parser.add_argument("--shape-registry",type=Path,help="versioned blockstate VoxelShape JSON")
+    parser.add_argument("--strict-shapes",action="store_true",help="error on unresolved block shapes")
     parser.add_argument("--max-bytes",type=int,default=64*1024*1024)
     args=parser.parse_args(argv)
     try:
         data=load(args.schematic,max_bytes=args.max_bytes)
-        geometry=[Compound.from_construct(c).summary() for c in data["constructs"]]
+        registry=ShapeRegistry.from_json(args.shape_registry) if args.shape_registry else None
+        geometry=[Compound.from_construct(c,registry=registry,strict_shapes=args.strict_shapes).summary()
+                  for c in data["constructs"]]
         out={"status":"ok","format":data["format"],"constructs":geometry}
         if args.out:
             args.out.parent.mkdir(parents=True,exist_ok=True)

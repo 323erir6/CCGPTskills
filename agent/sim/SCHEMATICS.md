@@ -20,3 +20,13 @@ python3 -m unittest discover -s agent/tests -p 'test_*.py' -v
 **Not yet equivalent to Minecraft:** shape registries for every state/mod, actual Sable physics mass and collision shape generation, Rapier contact constraints, the rotation-dependent full CCD sweep, Create bearing joint mechanics, serialized runtime UUID mapping, block entity behavior and exact tick scheduling. These demand version-specific source/trace validation. Do **not** call the result "100% accurate" for unsupported subsystems.
 
 Source evidence: `Rew1nd-dev/sable-schematic-api` `SableBlueprint.java`, `SubLevelSaveFrame.java`; Create structure binary NBT schema as documented for Java Edition. Tests use synthetic binary NBT fixtures, not real user schematics.
+
+## Versioned VoxelShape registry (accuracy upgrade)
+
+For exact collisions on modded blocks, give a blockstate-qualified registry exported from the **same installed modpack**. The registry maps a state key such as `example:thin_plate[facing=north]` to one or more `[minX,minY,minZ,maxX,maxY,maxZ]` boxes, in block-local coordinates. Use `--strict-shapes` to fail on any unresolved block instead of silently treating it as a full cube:
+
+```sh
+python3 agent/sim/schematic_cli.py structure.nbt --shape-registry shapes.json --strict-shapes --summary
+```
+
+See `shapes.example.json` for the schema **only**: the example records are invented test fixtures, not verified data. Generate real data by querying Minecraft/NeoForge's `BlockState#getCollisionShape` for the installed block states, ideally including neighbor context for connection-dependent blocks. Some block shapes depend on world state, so the registry is only sufficient for context-independent blocks. This importer does not yet include such a game-side extractor.

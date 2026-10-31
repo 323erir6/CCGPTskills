@@ -129,6 +129,8 @@
       "native Rapier collision meshes",
       "rotation CCD",
       "actual blueprint runtime re-linking"
-    ]
+    ],
+    "shape_registry": "agent/sim/shapes.example.json (schema example, not real measurements)",
+    "strict_shapes": true
   }
 }
