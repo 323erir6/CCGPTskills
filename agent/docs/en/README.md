@@ -80,3 +80,21 @@ Use a topic branch for substantial changes; use `.github/pull_request_template.m
 ## Free-cost boundary
 
 GitHub standard hosted runners are generally free for public repositories, subject to service limits. Private repositories receive included allowances, and paid runner/storage scenarios may apply. The code and mocks use Python stdlib and system Lua 5.3; optional formatters and emulators are freely available. Hosted ChatGPT/API model inference is *not* included in free GitHub Actions compute.
+
+## 11. [goloop] — continuous execution for a checklist
+
+Start a user-authored request with the exact standalone marker `[goloop]` and place all tasks after it, one per line or as a numbered list:
+
+```text
+[goloop]
+1. Implement the change in a topic branch.
+2. Reproduce the reported failure with an automated test.
+3. Fix failing checks, inspect the CI logs and review the diff.
+4. Open a pull request with evidence of passing tests.
+```
+
+The marker is **request-scoped**: it automatically selects the GOCODE engineering workflow for the listed tasks without requiring the persistent `gocode` trigger. For each item establish observable acceptance criteria, keep a checklist and iterate through analysis, code, tests and correction while tools and response execution are available. Shift engineering modes automatically; an explicitly requested mode takes precedence.
+
+Treat `verified`, `partial`, `blocked` and `not tested` as different outcomes. Do not stop merely because the first build succeeded if a listed task remains actionable. Conversely, do not enter an unbounded retry loop or claim a task is 100% complete without adequate evidence. External Minecraft integration tests that were not run must be reported as not tested. Report blockers and exact next actions if resources, permissions or tools prevent further progress.
+
+**Stop control:** use the interface's Stop generating control to interrupt an active response. A later `[gostop]` or `gostop` message disables future execution-loop instructions (and `gostop` also disables GOCODE). These text commands do not provide a communication channel into a still-running generation. The platform can terminate or limit any request; the marker cannot override those limits or schedule background work.
