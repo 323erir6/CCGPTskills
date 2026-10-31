@@ -89,6 +89,18 @@
         "agent/tests/test_craftos.lua"
       ],
       "expected": "simulated CraftOS program tests passed"
+    },
+    {
+      "id": "nbt_geometry",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "agent.tests.test_schematics",
+        "agent.tests.test_rigid",
+        "-v"
+      ],
+      "expected": ""
     }
   ]
 }

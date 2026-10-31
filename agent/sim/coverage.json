@@ -106,5 +106,29 @@
     "agent/tests/test_world.lua",
     "agent/scenarios/falling_block.lua"
   ],
-  "principle": "No approximation is presented as a verified Minecraft or Sable implementation. Run real mod tests or compare recorded traces before marking a subsystem as conformance-verified."
+  "principle": "No approximation is presented as a verified Minecraft or Sable implementation. Run real mod tests or compare recorded traces before marking a subsystem as conformance-verified.",
+  "schematic_geometry": {
+    "formats": [
+      "create_structure_nbt",
+      "sable_photomancy_v1"
+    ],
+    "implementation": "agent/sim/schematics.py",
+    "geometry": "individual rotated voxel-oriented boxes",
+    "ccd": "translation fixed-orientation SAT",
+    "fidelity": "partial: exact known cube/slab shapes only; other mod blocks conservative",
+    "preserved": [
+      "palette",
+      "block_properties",
+      "block_entity",
+      "entities",
+      "per_sublevel_pose",
+      "sidecar"
+    ],
+    "not_implemented": [
+      "all modded VoxelShapes",
+      "native Rapier collision meshes",
+      "rotation CCD",
+      "actual blueprint runtime re-linking"
+    ]
+  }
 }

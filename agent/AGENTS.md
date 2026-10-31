@@ -93,3 +93,7 @@ Before implementing a complex CC:Tweaked control program, use `agent/sim/` to re
 - Prefer measured real-game traces or verified source behavior for fidelity improvements; report deviations with `agent/sim/compare.py`.
 - Do not assert full modpack support, native block collisions or true Minecraft scheduling.
 - Text-only JSON output and explicit pass/fail evidence are mandatory for new simulator scenarios.
+
+## Schematic geometry fidelity
+
+For .nbt imports distinguish Create and Photomancy v1 by root NBT tags. Prefer Python compound-voxel `agent/sim/geometry.py` and `rigid.py` instead of the Lua sphere-based test model. Preserve sublevels, palettes, block NBT and relative poses. Check `unresolved_block_shapes` before trusting collision results; do not claim exact Rapier/Sable physics, modded VoxelShapes or live-game agreement from synthetic fixture tests.

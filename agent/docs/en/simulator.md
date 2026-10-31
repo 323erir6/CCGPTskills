@@ -95,3 +95,21 @@ assert(result.ok,result.error)
 \`\`\`
 
 This is a **bounded test execution environment**, not a verified security sandbox or full CraftOS kernel. It is intended for source code under the user's control. It does not implement \`parallel\`, the full terminal, turtles, disk APIs, modem routing/timing, filesystem behavior, or complete mod peripheral implementations. External APIs that aren't exposed must fail clearly rather than be invented.
+
+
+## 13. Source-grounded schematic geometry import
+
+The **Python reference geometry harness** in \`agent/sim/nbt.py\`, \`schematics.py\`, \`geometry.py\` and \`rigid.py\` replaces spherical collision proxies with individual occupied voxel shapes. It is a separate, more detailed reference implementation than the older Lua \`world.lua\` approximation; tests should select it when schematic collision geometry matters. It handles gzipped/uncompressed Java NBT, Create structure NBT and **Sable Photomancy v1** as independently parsed formats. It preserves palette names/states, block entities, entities, distinct Sable sublevels, source UUIDs, extra sidecar data, and relative-pose NBT.
+
+Run from repository root:
+\`\`\`sh
+python3 agent/sim/schematic_cli.py path/to/create_schematic.nbt --summary
+python3 agent/sim/schematic_cli.py path/to/photomancy_blueprint.nbt --out agent-results/blueprint.json
+python3 -m unittest agent.tests.test_schematics agent.tests.test_rigid -v
+\`\`\`
+
+\`Compound.from_construct()\` converts saved block positions to separate oriented collision boxes. It preserves genuine gaps and uses a continuous SAT box/box time-of-impact calculation for translation at fixed orientation. It uses per-box volume/inertia approximations instead of the previous single-sphere inertia. Multi-sublevel blueprints remain separate, as Photomancy requires.
+
+**Fidelity boundary:** exact spatial placement and full-block/slab collision shapes for confirmed vanilla states; arbitrary modded shapes, Create mechanical joints, Sable native Rapier collision shapes, rotations during swept collisions, correct Sable material masses and Photomancy runtime reference remapping are **not** yet reproduced. Other block shapes are flagged \`unresolved_block_shapes\` and conservatively approximated as full cubes. The saved \`relative_pose\`, \`blocks_origin\`, \`anchor_bounds\`, UUIDs and sidecars are preserved raw, not guessed into unverified world poses. No real user schematic was available for a live conformance test: tests construct binary NBT fixtures.
+
+Full implementation guide: [SCHEMATICS.md](../../sim/SCHEMATICS.md). Relevant source: [Sable Photomancy \`SableBlueprint.java\`](https://github.com/Rew1nd-dev/sable-schematic-api/blob/master/src/main/java/dev/rew1nd/sableschematicapi/blueprint/SableBlueprint.java).
