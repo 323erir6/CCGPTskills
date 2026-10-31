@@ -44,6 +44,7 @@ jobs:
       - name: Run headless world simulator tests
         run: |
           lua5.3 agent/tests/test_world.lua
+          lua5.3 agent/tests/test_craftos.lua
           lua5.3 agent/sim/run.lua agent/scenarios/falling_block.lua > agent-results-world.json
       - name: Run deterministic benchmark
         run: python3 agent/scripts/benchmark.py --output agent-results/benchmark.json

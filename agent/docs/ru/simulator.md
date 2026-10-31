@@ -71,3 +71,27 @@ python3 agent/sim/compare.py reference.json simulated.json --abs 0.01 --rel 0.00
 6. Для каждой части явно указывать статус: \`mock\`, \`approximation\`, \`source-confirmed\`, \`trace-verified\`. Синтетический тест сам по себе **не подтверждает работу в настоящем Minecraft**.
 
 Объём модпака не позволяет сейчас честно заявить о полной эквивалентности. Реальный перечень возможностей описывает файл \`agent/sim/coverage.json\`.
+
+
+## Запуск настоящей логики Lua, а не только математических функций
+
+\`agent/sim/craftos.lua\` исполняет доверенный текст Lua-программы в имитации окружения CraftOS. Доступны \`os\` с таймерами и событиями, \`sleep\` как управляемое продвижение игровых тиков, \`redstone\`, \`rednet\`, \`peripheral\`, \`sublevel\`, а также текстовые \`print\` и \`term.write\`. Записываются вывод, ошибки, время симуляции и приблизительное количество инструкций. Хук ограничения инструкций останавливает бесконечные циклы; системные операции ввода/вывода не предоставляются.
+
+**Пример:**
+
+\`\`\`lua
+local Engine=require("agent.sim.engine")
+local CC=require("agent.sim.cc")
+local Runtime=require("agent.sim.craftos")
+local engine=Engine.new({gravity={x=0,y=0,z=0}})
+local id=engine.world:addBody({position={x=1,y=2,z=3}})
+local computer=CC.new(engine):addComputer(1,id)
+local result=Runtime.run(engine,computer,[[
+  print(sublevel.getLogicalPose().position.x)
+  sleep(0.1)
+  redstone.setAnalogOutput("back",15)
+]])
+assert(result.ok,result.error)
+\`\`\`
+
+Это **ограниченная тестовая среда**, а не проверенная песочница безопасности или полное ядро CraftOS. Используйте собственный доверенный код. Пока не реализованы \`parallel\`, полноценный терминал, черепахи, диски, маршрутизация модемов, файловая система и большинство методов модовой периферии. Несуществующие API должны давать понятную ошибку, а не имитироваться наугад.

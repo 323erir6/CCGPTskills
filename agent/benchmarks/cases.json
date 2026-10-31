@@ -81,6 +81,14 @@
         "agent/scenarios/falling_block.lua"
       ],
       "expected": "\"status\":\"passed\""
+    },
+    {
+      "id": "craftos_programs",
+      "command": [
+        "lua5.3",
+        "agent/tests/test_craftos.lua"
+      ],
+      "expected": "simulated CraftOS program tests passed"
     }
   ]
 }

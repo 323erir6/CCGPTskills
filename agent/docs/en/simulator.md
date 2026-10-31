@@ -71,3 +71,27 @@ The reference and simulator JSON structures must match. A **reference trace** mu
 6. Label each subsystem \`mock\`, \`approximation\`, \`source-confirmed\` or \`trace-verified\`. Never claim that a successful synthetic test proves live Minecraft compatibility.
 
 The complete modpack is too extensive to truthfully claim full equivalence today. The coverage manifest is authoritative for what exists.
+
+
+## Executing actual Lua logic, not only isolated mathematics
+
+\`agent/sim/craftos.lua\` runs a trusted Lua source string against a synthetic CraftOS environment. It supplies \`os\` timers/events, \`sleep\` as deterministic simulated ticks, \`redstone\`, \`rednet\`, \`peripheral\`, \`sublevel\`, and text-only \`print\`/ \`term.write\`. The runner records output, simulator time, exceptions and approximate Lua instruction count. A bounded instruction hook aborts infinite loops, and system I/O and operating-system functions are not passed into the script environment.
+
+**Example:**
+
+\`\`\`lua
+local Engine=require("agent.sim.engine")
+local CC=require("agent.sim.cc")
+local Runtime=require("agent.sim.craftos")
+local engine=Engine.new({gravity={x=0,y=0,z=0}})
+local id=engine.world:addBody({position={x=1,y=2,z=3}})
+local computer=CC.new(engine):addComputer(1,id)
+local result=Runtime.run(engine,computer,[[
+  print(sublevel.getLogicalPose().position.x)
+  sleep(0.1)
+  redstone.setAnalogOutput("back",15)
+]])
+assert(result.ok,result.error)
+\`\`\`
+
+This is a **bounded test execution environment**, not a verified security sandbox or full CraftOS kernel. It is intended for source code under the user's control. It does not implement \`parallel\`, the full terminal, turtles, disk APIs, modem routing/timing, filesystem behavior, or complete mod peripheral implementations. External APIs that aren't exposed must fail clearly rather than be invented.
