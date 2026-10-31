@@ -34,6 +34,6 @@ local device = assert(peripheral.wrap(name))
 
 Стандартный `monitor` поддерживает операции терминала; продвинутый монитор может выдавать событие `monitor_touch`. Внешние GPU-периферии не являются тем же API и требуют собственной документации.
 
-См. [Интеграции модов](../../mods/README.md) и [инспектор](../../examples/inspect_peripherals.lua).
+См. [Интеграции модов](mods/installed-peripherals.md) и [инспектор](../../examples/inspect_peripherals.lua).
 
 Источник: https://tweaked.cc/module/peripheral.html

@@ -135,7 +135,7 @@ The global `aero` module supplies dimension-specific physics:
 
 | Function | Input | Return |
 | --- | --- | --- |
-| `aero.getAirPressure(position)` | vector | number |
+| `aero.getAirPressure(x,y,z)` | 3 numbers | number |
 | `aero.getGravity()` | none | vector |
 | `aero.getMagneticNorth()` | none | vector |
 | `aero.getUniversalDrag()` | none | number |

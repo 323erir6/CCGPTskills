@@ -28,12 +28,12 @@
 ## 2. Структура pose
 
 ```lua
-pose.position = {x=100,y=80,z=-20}   -- EN: world translation / RU: глобальный перенос
-pose.rotationPoint = {x=5,y=6,z=7}  -- EN: pivot / RU: центр поворота
-pose.scale = {x=1,y=1,z=1}          -- EN: per-axis scaling / RU: масштаб осей
+pose.position = {x=100,y=80,z=-20}   -- Глобальный перенос
+pose.rotationPoint = {x=5,y=6,z=7}  -- Центр вращения
+pose.scale = {x=1,y=1,z=1}          -- Масштаб по осям
 pose.orientation = {
-  a=1,                                -- EN: quaternion w / RU: скаляр w
-  v={x=0,y=0,z=0}                    -- EN: quaternion xyz / RU: вектор xyz
+  a=1,                                -- Скалярная часть кватерниона
+  v={x=0,y=0,z=0}                    -- Векторная часть кватерниона
 }
 ```
 
@@ -112,7 +112,7 @@ roll=deg(atan2(rightY,upY))
 
 | Метод | Аргументы | Возвращает |
 | --- | --- | --- |
-| `aero.getAirPressure(position)` | vector | number |
+| `aero.getAirPressure(x,y,z)` | 3 numbers | number |
 | `aero.getGravity()` | нет | vector |
 | `aero.getMagneticNorth()` | нет | vector |
 | `aero.getUniversalDrag()` | нет | number |

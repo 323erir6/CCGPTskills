@@ -1,31 +1,20 @@
-# Repository engineering rules / Правила разработки
+# Engineering rules for CC:Tweaked reference library
 
-## English
+1. Read existing repository documentation and relevant source code before editing.
+2. Verify every built-in API using the correct CC:Tweaked version, and every mod API with that mod's source and installed JAR.
+3. Never invent methods, numeric units, field names, axis conventions or hardware limits.
+4. Separate all documentation prose by language: English only under `docs/en/`, Russian only under `docs/ru/`.
+5. Shared executable Lua code may use dual-language comments where necessary, but do not mix English and Russian prose within any language-specific document.
+6. Prefer small, verifiable examples. Document exact dependencies and test status.
+7. Mark whether methods are source-confirmed, bytecode-confirmed, tested at runtime, or hypotheses.
+8. Do not confuse internal Java methods with public Lua API; verify `@LuaFunction` or runtime `peripheral.getMethods`.
+9. Use timeouts and bounded operations; validate messages and device capabilities.
+10. Preserve backwards compatibility, existing examples and user data.
+11. Do not insert personal details, credentials, private conversation excerpts or unpublished assets.
+12. For each new API family, supply signatures, units, return schemas, errors, version conditions, examples and tests where feasible.
+13. Never claim successful in-game tests unless they were actually executed.
+14. Keep index navigation and relative Markdown links valid.
+15. Do not copy large upstream documentation or proprietary source files; write independent technical reference material.
 
-This is a CC:Tweaked Lua reference library for humans and automated coding tools.
-
-1. Read the relevant documentation and existing implementation before modifying a file.
-2. Verify built-in APIs against https://tweaked.cc/ and modded APIs against the installed mod version.
-3. Never invent a peripheral method, return-field name, rotation convention or hardware range.
-4. Prefer small, reusable programs with explicit startup validation and helpful error messages.
-5. Keep Lua comments bilingual: `-- EN: ...` immediately followed by `-- RU: ...` for explanatory comments.
-6. Maintain equivalent English and Russian documentation where a bilingual pair exists.
-7. Clearly label samples requiring third-party mods, unsupported versions or manual integration.
-8. Use timeouts, bounded loops, defensive network decoding and safe shutdown for outputs.
-9. Never claim that code was executed in Minecraft without real execution evidence.
-10. Do not add personal details, conversational text, credentials or private project state.
-
-## Русский
-
-Это справочная библиотека CC:Tweaked Lua для людей и автоматических инструментов разработки.
-
-1. Перед изменениями изучайте соответствующую документацию и текущий код.
-2. Проверяйте стандартные API через https://tweaked.cc/, а сторонние — по установленной версии мода.
-3. Не выдумывайте методы периферии, поля результатов, соглашения о вращении и пределы приводов.
-4. Пишите небольшие повторно используемые программы с проверками и понятными ошибками.
-5. Поясняющие комментарии Lua дублируйте: `-- EN: ...` и следующей строкой `-- RU: ...`.
-6. Поддерживайте эквивалентные английские и русские документы.
-7. Отдельно отмечайте необходимость сторонних модов и ручной настройки.
-8. Используйте тайм-ауты, ограниченные циклы, проверку сетевого ввода и безопасное отключение выходов.
-9. Не объявляйте запуск в Minecraft успешным без реального подтверждения.
-10. Не добавляйте персональные сведения, переписку, секреты или внутреннее состояние частных проектов.
+English contributor guide: [docs/en/contributing.md](docs/en/contributing.md).
+Russian contributor guide: [docs/ru/contributing.md](docs/ru/contributing.md).

@@ -36,6 +36,6 @@ A vanilla `monitor` supports terminal-style drawing and `monitor_touch` events o
 
 ## See also
 
-- [Modded integration notes](../../mods/README.md)
+- [Modded integration notes](mods/installed-peripherals.md)
 - [Peripheral inventory inspector](../../examples/inspect_peripherals.lua)
 - https://tweaked.cc/module/peripheral.html
