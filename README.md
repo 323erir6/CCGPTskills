@@ -27,6 +27,9 @@ A bilingual (English / Русский) reference and example collection for writ
 | [Peripherals and compatibility](docs/en/peripherals.md) | [Периферия и совместимость](docs/ru/peripherals.md) |
 | [Coordinates and control](docs/en/maths-and-control.md) | [Координаты и управление](docs/ru/maths-and-control.md) |
 | [Reliability and security](docs/en/reliability.md) | [Надёжность и безопасность](docs/ru/reliability.md) |
+| [User interfaces](docs/en/ui-and-input.md) | [Пользовательские интерфейсы](docs/ru/ui-and-input.md) |
+| [Turtles and inventories](docs/en/turtles-and-inventories.md) | [Черепахи и инвентари](docs/ru/turtles-and-inventories.md) |
+| [Testing and deployment](docs/en/testing-and-deployment.md) | [Тестирование и развёртывание](docs/ru/testing-and-deployment.md) |
 
 See [Examples](examples/README.md), [Libraries](lib/README.md), [Modded APIs](mods/README.md), and [Development conventions](AGENTS.md).
 

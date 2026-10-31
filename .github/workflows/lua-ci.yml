@@ -1,0 +1,26 @@
+name: Lua syntax and pure-module tests
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lua-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Install Lua 5.3
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lua5.3
+      - name: Compile all Lua files
+        run: |
+          find lib examples tests -type f -name '*.lua' -print0 | xargs -0 -r -n 1 luac5.3 -p
+      - name: Run pure math tests
+        run: |
+          lua5.3 tests/math3d_test.lua
+          lua5.3 tests/pid_test.lua
