@@ -57,7 +57,7 @@ class Reader:
         if tag == 6: return self.num("d")
         if tag == 7:
             n = self.num("i"); self.count(n)
-            return list(self.read(n))
+            return [v[0] for v in struct.iter_unpack(">b", self.read(n))]
         if tag == 8: return self.string()
         if tag == 9:
             child, length = self.num("B"), self.num("i")

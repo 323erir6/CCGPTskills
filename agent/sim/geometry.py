@@ -172,6 +172,7 @@ class Compound:
             name=state["name"]
             if record.get("unavailable"):
                 unresolved.append(name+":unavailable_palette")
+                if strict_shapes:raise ValueError("unavailable palette state: "+name)
                 continue
             props=state.get("properties",{})
             shapes,accuracy=collision_shape(name,props,registry)

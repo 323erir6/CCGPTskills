@@ -91,6 +91,20 @@ class TestSchematicIO(unittest.TestCase):
         self.assertEqual("extra",sub["sidecar"]["fixture"])
         self.assertEqual(1.5,sub["relative_pose"]["position"]["x"])
 
+    def test_signed_byte_array_and_nbt_numeric_tags(self):
+        raw=bytes([10,0,0])+compound({
+            "data":(7,struct.pack(">i",4)+bytes([255,0,127,128])),
+            "long":(4,struct.pack(">q",-123456789012345))})
+        result=loads(raw)
+        self.assertEqual([-1,0,127,-128],result["data"])
+        self.assertEqual(-123456789012345,result["long"])
+
+    def test_unknown_palette_state_rejected_in_strict_mode(self):
+        construct={"palette":[{"name":"mod:missing","properties":{}}],
+            "blocks":[{"pos":[0,0,0],"state":0,"unavailable":True}]}
+        with self.assertRaisesRegex(ValueError,"unavailable palette state"):
+            Compound.from_construct(construct,strict_shapes=True)
+
     def test_bad_palette_rejected(self):
         data=loads(make_create())
         data["blocks"][0]["state"]=20
