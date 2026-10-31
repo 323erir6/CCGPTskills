@@ -41,3 +41,7 @@ python3 agent/sim/simulate_schematic.py first.nbt second.nbt --layout positions.
 `positions.json` is an ordered array of bodies (including distinct Photomancy sublevels). Each entry may contain `position` `[x,y,z]`, `orientation` `[w,x,y,z]`, `velocity`, `angular_velocity`, and `mass`. Multiple bodies **require** an explicit layout so that the simulator never invents real Sable positions. Any Photomancy source `relative_pose` remains in output metadata as an unmodified reference for source-version-validated placement adapters.
 
 Every report includes voxel count, number of collidable boxes, list of unresolved shapes, applied positioning source, contact events, mass/inertia and optional per-tick traces. The dynamics are an explicit approximation, not Rapier's contact solver.
+
+## Sable 2.0.5 source-pinned physics
+
+For source-derived defaults (gravity, damping, world contact friction and physics frequency), use `World(profile="sable-2.0.5", ground_y=<world surface>)`. The implementation uses the exact pinned Rapier **scalar integration and damping formulas** and an **approximate terrain-contact solver**. Full Rapier contact conformance is NOT established. Source lineage and validation: `agent/docs/en/sable-2.0.5-physics.md`, `agent/docs/ru/sable-2.0.5-physics.md`.

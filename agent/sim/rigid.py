@@ -6,7 +6,8 @@ between simultaneous rotating bodies remain approximate, not Rapier-equivalent.
 """
 from __future__ import annotations
 from dataclasses import dataclass, field
-from math import ceil, sqrt, exp, isfinite
+from math import ceil, sqrt, isfinite
+from .sable205 import Sable205, damp
 from .geometry import Compound, Vector, add, sub, mul, dot, norm
 
 
@@ -66,7 +67,15 @@ class Body:
                 "unresolved_shapes":self.geometry.unresolved}
 
 class World:
-    def __init__(self,physics_hz=120,gravity=(0.,-9.81,0.),max_pair_checks=100000,ground_y=None,ground_friction=0.5):
+    def __init__(self,physics_hz=None,gravity=None,max_pair_checks=100000,ground_y=None,ground_friction=None,profile=None):
+        if profile is not None and profile != "sable-2.0.5":
+            raise ValueError("unknown simulation profile")
+        exact = Sable205() if profile else None
+        physics_hz = physics_hz if physics_hz is not None else exact.physics_hz if exact else 120
+        gravity = gravity if gravity is not None else exact.gravity if exact else (0.,-9.81,0.)
+        ground_friction = ground_friction if ground_friction is not None else exact.contact_friction if exact else 0.5
+        self.profile = profile
+        self.default_damping = exact.universal_drag if exact else 0.0
         if not isinstance(physics_hz,int) or physics_hz<20 or physics_hz>2000 or physics_hz%20:
             raise ValueError("physics_hz must be multiple of 20 between 20 and 2000")
         self.physics_hz=physics_hz
@@ -86,7 +95,8 @@ class World:
         self._grounded_ids=set()
 
     def add(self,geometry:Compound,*,mass=1.,position=(0.,0.,0.),velocity=(0.,0.,0.),
-            orientation=(1.,0.,0.,0.),angular_velocity=(0.,0.,0.),damping=0.,restitution=0.,static=False):
+            orientation=(1.,0.,0.,0.),angular_velocity=(0.,0.,0.),damping=None,restitution=0.,static=False):
+        damping = self.default_damping if damping is None else damping
         if not isfinite(mass) or mass<=0:raise ValueError("positive finite mass required")
         if not isfinite(damping) or damping<0:raise ValueError("invalid damping")
         if not 0<=restitution<=1:raise ValueError("invalid restitution")
@@ -115,12 +125,12 @@ class World:
                 for id,b in self.bodies.items():
                     if b.static:continue
                     acceleration=add(self.gravity,mul(b.persistent_force,1/b.mass))
-                    velocity=mul(add(b.velocity,mul(acceleration,dt)),exp(-b.damping*dt))
-                    b.velocity=velocity
+                    b.velocity=add(b.velocity,mul(acceleration,dt))
                 self._move(dt)
                 self._resolve_flat_ground(dt)
                 for b in self.bodies.values():
                     if b.static:continue
+                    b.velocity=tuple(damp(v,b.damping,dt) for v in b.velocity)
                     b.orientation=qstep(b.orientation,b.angular_velocity,dt)
                 self.time+=dt;self.physics_step+=1
             self.tick+=1

@@ -33,3 +33,5 @@ Run: `lua5.3 agent/sim/run.lua agent/scenarios/falling_block.lua`.
 - [Create / Photomancy NBT geometry import and collision rules](sim/SCHEMATICS.md)
 - [Binary NBT parser](sim/nbt.py) · [source-format adapters](sim/schematics.py) · [voxel SAT collisions](sim/geometry.py) · [compound rigid bodies](sim/rigid.py)
 - [Binary NBT regression tests](tests/test_schematics.py) · [rigid-body regression tests](tests/test_rigid.py)
+
+- **Sable 2.0.5 source-matched physics formulas / Формулы физики Sable 2.0.5:** [English](docs/en/sable-2.0.5-physics.md) / [Русский](docs/ru/sable-2.0.5-physics.md).

@@ -121,3 +121,7 @@ For exact supported modded shapes, provide a versioned collision registry whose 
 ### Headless physics replay from NBT
 
 Use `python3 agent/sim/simulate_schematic.py construction.nbt --ticks 100 --trace --out agent-results/physics.json` for deterministic compound-voxel physics tests. For multiple schematics or Photomancy sublevels, supply `--layout` with explicit world poses, masses and velocities. The output records every sublevel's source pose metadata unchanged alongside the simulated pose, so missing origin mappings cannot silently masquerade as correct world transforms.
+
+## Version-pinned Sable 2.0.5 physics
+
+When testing Minecraft 1.21.1 NeoForge modpack builds, use [Sable 2.0.5 source-confirmed physics defaults and formulas](sable-2.0.5-physics.md). This profile includes the original Rapier fork damping rule and default friction combination; the voxel collision solver remains approximate.
