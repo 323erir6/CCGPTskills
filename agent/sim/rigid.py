@@ -56,11 +56,12 @@ class Body:
     com:Vector=(0.,0.,0.)
     inertia:Vector=(0.,0.,0.)
     persistent_force:Vector=(0.,0.,0.)
+    static:bool=False
 
     def snapshot(self):
         return {"id":self.id,"position":self.position,"velocity":self.velocity,
                 "orientation":self.orientation,"angular_velocity":self.angular_velocity,
-                "mass":self.mass,"inertia":self.inertia,"voxel_blocks":self.geometry.blocks,
+                "mass":self.mass,"inertia":self.inertia,"static":self.static,"voxel_blocks":self.geometry.blocks,
                 "collision_boxes":len(self.geometry.primitives),
                 "unresolved_shapes":self.geometry.unresolved}
 
@@ -77,37 +78,43 @@ class World:
         self.time=0.
         self.events=[]
         self.contact_checks=0
+        self._contact_pairs=set()
 
     def add(self,geometry:Compound,*,mass=1.,position=(0.,0.,0.),velocity=(0.,0.,0.),
-            orientation=(1.,0.,0.,0.),angular_velocity=(0.,0.,0.),damping=0.,restitution=0.):
+            orientation=(1.,0.,0.,0.),angular_velocity=(0.,0.,0.),damping=0.,restitution=0.,static=False):
         if not isfinite(mass) or mass<=0:raise ValueError("positive finite mass required")
         if not isfinite(damping) or damping<0:raise ValueError("invalid damping")
         if not 0<=restitution<=1:raise ValueError("invalid restitution")
         com,inertia=centroid_inertia(geometry,mass)
         id=max(self.bodies.keys(),default=0)+1
         b=Body(id,geometry,mass,tuple(position),tuple(velocity),tuple(orientation),
-               tuple(angular_velocity),damping,restitution,com,inertia)
+               tuple(angular_velocity),damping,restitution,com,inertia,static=static)
         self.bodies[id]=b
         return id
 
     def force(self,id:int,f:Vector):
-        b=self.bodies[id];b.persistent_force=add(b.persistent_force,tuple(f))
+        b=self.bodies[id]
+        if b.static:raise ValueError("cannot accelerate static body")
+        b.persistent_force=add(b.persistent_force,tuple(f))
 
     def impulse(self,id:int,dp:Vector):
-        b=self.bodies[id];b.velocity=add(b.velocity,mul(tuple(dp),1/b.mass))
+        b=self.bodies[id]
+        if b.static:raise ValueError("cannot impulse static body")
+        b.velocity=add(b.velocity,mul(tuple(dp),1/b.mass))
 
     def advance(self,ticks=1):
         if not isinstance(ticks,int) or ticks<0 or ticks>100000:raise ValueError("invalid tick count")
         dt=1/self.physics_hz
         for _ in range(ticks):
             for substep in range(self.physics_hz//20):
-                old_positions={id:b.position for id,b in self.bodies.items()}
                 for id,b in self.bodies.items():
+                    if b.static:continue
                     acceleration=add(self.gravity,mul(b.persistent_force,1/b.mass))
                     velocity=mul(add(b.velocity,mul(acceleration,dt)),exp(-b.damping*dt))
                     b.velocity=velocity
                 self._move(dt)
                 for b in self.bodies.values():
+                    if b.static:continue
                     b.orientation=qstep(b.orientation,b.angular_velocity,dt)
                 self.time+=dt;self.physics_step+=1
             self.tick+=1
@@ -123,6 +130,7 @@ class World:
             a=self.bodies[ids[i]]
             for j in range(i+1,len(ids)):
                 b=self.bodies[ids[j]]
+                if a.static and b.static:continue
                 checks+=len(a.geometry.primitives)*len(b.geometry.primitives)
                 if checks>self.max_pair_checks:
                     raise RuntimeError("collision pair budget exceeded: partition geometry or increase limit")
@@ -135,21 +143,30 @@ class World:
                     earliest=(hit[0],a.id,b.id,hit[1])
         self.contact_checks+=checks
         if earliest is None:
-            for b in self.bodies.values():b.position=add(b.position,mul(b.velocity,dt))
+            self._contact_pairs.clear()
+            for b in self.bodies.values():
+                if not b.static:b.position=add(b.position,mul(b.velocity,dt))
             return
         time,a_id,b_id,n=earliest
-        for b in self.bodies.values():b.position=add(b.position,mul(b.velocity,time))
+        for b in self.bodies.values():
+            if not b.static:b.position=add(b.position,mul(b.velocity,time))
         a=self.bodies[a_id];b=self.bodies[b_id]
         rv=dot(sub(a.velocity,b.velocity),n)
         if rv<0:
-            impulse=-(1+min(a.restitution,b.restitution))*rv/(1/a.mass+1/b.mass)
-            a.velocity=add(a.velocity,mul(n,impulse/a.mass))
-            b.velocity=sub(b.velocity,mul(n,impulse/b.mass))
+            inv_a=0. if a.static else 1./a.mass
+            inv_b=0. if b.static else 1./b.mass
+            impulse=-(1+min(a.restitution,b.restitution))*rv/(inv_a+inv_b)
+            if not a.static:a.velocity=add(a.velocity,mul(n,impulse*inv_a))
+            if not b.static:b.velocity=sub(b.velocity,mul(n,impulse*inv_b))
         # Not a full iterative contact manifold solver; one contact in a substep.
         remaining=dt-time
-        for body in self.bodies.values():body.position=add(body.position,mul(body.velocity,remaining))
-        self.events.append({"event":"body_contact","a":a_id,"b":b_id,
-                            "normal":n,"time":self.time+time})
+        for body in self.bodies.values():
+            if not body.static:body.position=add(body.position,mul(body.velocity,remaining))
+        pair=(a_id,b_id)
+        if pair not in self._contact_pairs:
+            self.events.append({"event":"body_contact","a":a_id,"b":b_id,
+                                "normal":n,"time":self.time+time})
+        self._contact_pairs={pair}
 
     def snapshot(self):
         return {"status":"ok","tick":self.tick,"substep":self.physics_step,

@@ -75,7 +75,7 @@ def intersects(a:OBB,b:OBB,epsilon:float=1e-9)->bool:
 def swept_collision(a:OBB,b:OBB,relative_velocity:Vector,seconds:float)->tuple[float,Vector]|None:
     """Continuous OBB translation with fixed orientations. First impact time+axis."""
     if seconds<0 or not isfinite(seconds):raise ValueError("invalid time")
-    enter,leave=0.0,seconds
+    enter,leave=-inf,seconds
     normal=None
     for axis in separating_axes(a,b):
         loA,hiA=_project(a,axis); loB,hiB=_project(b,axis)
