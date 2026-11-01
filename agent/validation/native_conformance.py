@@ -105,7 +105,7 @@ def evaluate(cases, runs, *, vertical_tol=VERTICAL_TOLERANCE,
             rows.append({
                 'run': run_index + 1, 'case': c.id, 'mass': c.mass,
                 'initial_position': [c.start_x, c.start_y, c.start_z],
-                'final_position': list(pos), 'vertical_error_m': dy,
+                'final_position': list(pos), 'final_velocity': list(vel), 'vertical_error_m': dy,
                 'horizontal_drift_m': dr, 'final_speed_m_s': v,
                 'repeat_difference_m': repeat_delta, 'passed': ok,
             })
