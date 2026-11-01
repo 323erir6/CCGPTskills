@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+# Generated reports and packages
+agent-results/
+dist/
+*.zip
+
+# Local native dependencies and game archives
+*.jar
+*.so
+*.dll
+*.dylib
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

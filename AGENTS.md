@@ -18,3 +18,7 @@
 
 English contributor guide: [docs/en/contributing.md](docs/en/contributing.md).
 Russian contributor guide: [docs/ru/contributing.md](docs/ru/contributing.md).
+
+## GOCODE agent utilities
+
+For coding-agent tasks, see [agent/AGENTS.md](agent/AGENTS.md) and the independent [English](agent/docs/en/README.md) and [Russian](agent/docs/ru/README.md) implementation guides. These additional instructions do not create an always-on agent or override user permissions.

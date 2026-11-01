@@ -1,0 +1,29 @@
+# EN: Copy to .github/workflows/build.yml in a NeoForge source repository.
+# RU: Скопировать в .github/workflows/build.yml в репозитории NeoForge.
+name: NeoForge build and tests
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+      - name: Gradle wrapper permissions
+        run: chmod +x ./gradlew
+      - name: Build and run tests
+        run: ./gradlew build --no-daemon
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: mod-jar
+          path: build/libs/*.jar
+          retention-days: 14

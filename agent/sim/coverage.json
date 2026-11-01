@@ -1,0 +1,139 @@
+{
+  "schema_version": 1,
+  "status": "partial_emulation",
+  "engine": "GOCODE deterministic Lua 5.3 and Python text simulators",
+  "target": {
+    "minecraft": "1.21.1",
+    "cc_tweaked": "1.120.0",
+    "sable": "2.0.5",
+    "neoperipheral": "1.4ve"
+  },
+  "coverage": [
+    {
+      "system": "world_blocks",
+      "features": [
+        "sparse voxel positions",
+        "solid versus air",
+        "block id",
+        "ray/AABB sweep"
+      ],
+      "accuracy": "approximation",
+      "limitations": [
+        "not full block states",
+        "no chunk streaming",
+        "no fluids or block entities"
+      ]
+    },
+    {
+      "system": "physics",
+      "features": [
+        "mass",
+        "uniform gravity",
+        "impulses",
+        "force accumulation",
+        "angular velocity",
+        "normalized quaternions",
+        "linear exponential drag",
+        "continuous voxel AABB sweep",
+        "continuous body sphere sweep"
+      ],
+      "accuracy": "approximation",
+      "limitations": [
+        "bounding spheres instead of Sable compound collision meshes",
+        "no constraints or fluid dynamics",
+        "no exact Rapier integration order",
+        "contact solver is simplified",
+        "no native Sable plot grid"
+      ]
+    },
+    {
+      "system": "scheduler",
+      "features": [
+        "20 TPS clock",
+        "configurable physics substeps",
+        "scheduled callbacks",
+        "redstone event log"
+      ],
+      "accuracy": "partial",
+      "limitations": [
+        "Minecraft tick order not reproduced",
+        "redstone propagation not simulated",
+        "no random ticks or block updates"
+      ]
+    },
+    {
+      "system": "computer",
+      "features": [
+        "sublevel-shaped pose and velocity",
+        "NeoPeripheral-shaped physics state and impulses",
+        "peripheral registry mock",
+        "rednet mock",
+        "timer queue"
+      ],
+      "accuracy": "mock",
+      "limitations": [
+        "not real Lua CC scheduler",
+        "no modem range or network propagation",
+        "no actual mod hardware"
+      ]
+    },
+    {
+      "system": "output",
+      "features": [
+        "text-only JSON scenario snapshots",
+        "deterministic assertions",
+        "bounded data-only Python runner for ordinary ChatGPT"
+      ],
+      "accuracy": "exact for this simulator",
+      "limitations": [
+        "requires repository-trusted Lua scenarios"
+      ]
+    }
+  ],
+  "not_implemented": [
+    "Minecraft full registries",
+    "world generation",
+    "AI/pathfinding",
+    "lighting",
+    "inventories/crafting",
+    "Create kinetic networks",
+    "Create Aeronautics actual forces",
+    "CBC projectile penetration and explosive physics",
+    "all 139 enabled mod JAR semantics",
+    "full CC:Tweaked VM and multicomputer scheduling",
+    "real Rapier/Sable native engine"
+  ],
+  "validation": [
+    "agent/tests/test_world.lua",
+    "agent/scenarios/falling_block.lua",
+    "agent/tests/test_chat_runner.py",
+    "chatgpt/examples/drop_test.json"
+  ],
+  "principle": "No approximation is presented as a verified Minecraft or Sable implementation. Run real mod tests or compare recorded traces before marking a subsystem as conformance-verified.",
+  "schematic_geometry": {
+    "formats": [
+      "create_structure_nbt",
+      "sable_photomancy_v1"
+    ],
+    "implementation": "agent/sim/schematics.py",
+    "geometry": "individual rotated voxel-oriented boxes",
+    "ccd": "translation fixed-orientation SAT",
+    "fidelity": "partial: exact known cube/slab shapes only; other mod blocks conservative",
+    "preserved": [
+      "palette",
+      "block_properties",
+      "block_entity",
+      "entities",
+      "per_sublevel_pose",
+      "sidecar"
+    ],
+    "not_implemented": [
+      "all modded VoxelShapes",
+      "native Rapier collision meshes",
+      "rotation CCD",
+      "actual blueprint runtime re-linking"
+    ],
+    "shape_registry": "agent/sim/shapes.example.json (schema example, not real measurements)",
+    "strict_shapes": true
+  }
+}

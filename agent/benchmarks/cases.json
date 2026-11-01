@@ -1,0 +1,129 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "id": "geometry",
+      "command": [
+        "{lua}",
+        "tests/math3d_test.lua"
+      ],
+      "expected": "math3d tests passed"
+    },
+    {
+      "id": "pid",
+      "command": [
+        "{lua}",
+        "tests/pid_test.lua"
+      ],
+      "expected": "pid tests passed"
+    },
+    {
+      "id": "rounding",
+      "command": [
+        "{lua}",
+        "tests/round_test.lua"
+      ],
+      "expected": "round tests passed"
+    },
+    {
+      "id": "sublevel",
+      "command": [
+        "{lua}",
+        "tests/sublevel_pose_test.lua"
+      ],
+      "expected": "sublevel_pose tests passed"
+    },
+    {
+      "id": "mock_peripherals",
+      "command": [
+        "{lua}",
+        "agent/tests/test_mocks.lua"
+      ],
+      "expected": "mock tests passed"
+    },
+    {
+      "id": "mock_integration",
+      "command": [
+        "{lua}",
+        "agent/tests/test_integration.lua"
+      ],
+      "expected": "synthetic integration tests passed"
+    },
+    {
+      "id": "api_contracts",
+      "command": [
+        "{python}",
+        "agent/scripts/validate_api.py"
+      ],
+      "expected": "0 errors"
+    },
+    {
+      "id": "static_review",
+      "command": [
+        "{python}",
+        "agent/scripts/review.py"
+      ],
+      "expected": "0 high-signal findings"
+    },
+    {
+      "id": "synthetic_world",
+      "command": [
+        "{lua}",
+        "agent/tests/test_world.lua"
+      ],
+      "expected": "deterministic world tests passed"
+    },
+    {
+      "id": "synthetic_scenario",
+      "command": [
+        "{lua}",
+        "agent/sim/run.lua",
+        "agent/scenarios/falling_block.lua"
+      ],
+      "expected": "\"status\":\"passed\""
+    },
+    {
+      "id": "craftos_programs",
+      "command": [
+        "{lua}",
+        "agent/tests/test_craftos.lua"
+      ],
+      "expected": "simulated CraftOS program tests passed"
+    },
+    {
+      "id": "nbt_geometry",
+      "command": [
+        "{python}",
+        "-m",
+        "unittest",
+        "agent.tests.test_schematics",
+        "agent.tests.test_rigid",
+        "-v"
+      ],
+      "expected": ""
+    },
+    {
+      "id": "schematic_physics_replay",
+      "command": [
+        "{python}",
+        "-m",
+        "unittest",
+        "agent.tests.test_simulate_schematic",
+        "-v"
+      ],
+      "expected": ""
+    },
+    {
+      "id": "mod_functional_blocks",
+      "command": [
+        "{python}",
+        "-m",
+        "unittest",
+        "agent.tests.test_mod_devices",
+        "agent.tests.test_mod_manifest",
+        "-v"
+      ],
+      "expected": ""
+    }
+  ]
+}

@@ -1,0 +1,123 @@
+name: GOCODE agent checks
+
+on:
+  push:
+    paths:
+      - 'agent/**'
+      - 'lib/**'
+      - 'tests/**'
+      - 'examples/**'
+      - 'chatgpt/**'
+      - 'skills/**'
+      - '.github/workflows/gocode-agent-ci.yml'
+  pull_request:
+    paths:
+      - 'agent/**'
+      - 'lib/**'
+      - 'tests/**'
+      - 'examples/**'
+      - 'chatgpt/**'
+      - 'skills/**'
+      - '.github/workflows/gocode-agent-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gocode-agent-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deterministic-checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Lua 5.3
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lua5.3
+      - name: Compile Lua files
+        run: |
+          find lib tests examples agent/mocks agent/tests agent/sim agent/scenarios agent/projects/osprey -type f -name '*.lua' -print0 | xargs -0 -r -n 1 luac5.3 -p
+      - name: Check Python syntax
+        run: python3 -m compileall -q agent/scripts agent/tests agent/sim agent/projects/osprey
+      - name: Run agent Python unit tests
+        run: python3 -m unittest discover -s agent/tests -p 'test_*.py' -v
+      - name: Run headless world simulator tests
+        run: |
+          lua5.3 agent/tests/test_world.lua
+          lua5.3 agent/tests/test_craftos.lua
+          lua5.3 agent/sim/run.lua agent/scenarios/falling_block.lua > agent-results-world.json
+          python3 -m agent.sim.chat_runner chatgpt/examples/drop_test.json --pretty --out agent-results/chat-drop.json
+      - name: Test binary NBT import and voxel geometry
+        run: python3 -m unittest agent.tests.test_schematics agent.tests.test_rigid agent.tests.test_simulate_schematic -v
+      - name: Test functional mod blocks and integration
+        run: |
+          python3 -m unittest agent.tests.test_mod_devices agent.tests.test_mod_auxiliary agent.tests.test_mod_forces agent.tests.test_mod_manifest -v
+          python3 -m agent.sim.mod_cli agent/scenarios/mod_blocks.json --out agent-results/mod_blocks.json
+      - name: Compile original-Sable JNI bridge source
+        run: |
+          mkdir -p /tmp/gocode-native-classes
+          javac -d /tmp/gocode-native-classes $(find agent/native/src -name '*.java')
+      - name: Check optional native Rapier integration contract
+        run: python3 -m unittest agent.tests.test_native_rapier_bridge -v
+      - name: OSPREY Create schematic and CC flight-test checks
+        run: |
+          python3 -m unittest discover -s agent/projects/osprey/tests -p 'test_*.py' -v
+          lua5.3 agent/projects/osprey/tests/test_common.lua
+          (cd agent/projects/osprey/lua && lua5.3 ../tests/test_onboard.lua)
+          (cd agent/projects/osprey/lua && lua5.3 ../tests/test_recorder.lua)
+          (cd agent/projects/osprey/lua && lua5.3 ../tests/test_diagnostics.lua)
+          (cd agent/projects/osprey/lua && lua5.3 ../tests/test_diagnostics_sender.lua)
+          (cd agent/projects/osprey/lua && lua5.3 ../tests/test_diagnostics_receiver.lua)
+          python3 agent/projects/osprey/tools/build_schematic.py --out agent-results/OSPREY_Create.nbt --layout agent-results/osprey-layout.json
+      - name: Run deterministic benchmark
+        run: python3 agent/scripts/benchmark.py --output agent-results/benchmark.json
+      - name: Static Lua review
+        run: python3 agent/scripts/review.py lib examples agent/mocks agent/sim
+      - name: Package CraftOS Lua scripts
+        run: |
+          mkdir -p dist
+          zip -q -r dist/cc-tweaked-lua-toolkit.zip lib examples
+          python3 agent/scripts/build_chatgpt_bundle.py
+      - name: Upload CraftOS toolkit
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cc-tweaked-lua-toolkit-${{ github.run_id }}
+          path: dist/cc-tweaked-lua-toolkit.zip
+          retention-days: 14
+      - name: Upload ordinary ChatGPT simulator bundle
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sable-chatgpt-bundle-${{ github.run_id }}
+          path: dist/sable-chatgpt-bundle.zip
+          retention-days: 14
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gocode-benchmark-${{ github.run_id }}
+          path: |
+            agent-results/
+            agent-results-world.json
+          if-no-files-found: warn
+          retention-days: 14
+
+  windows-chat-smoke:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run Windows-safe simulator and runner tests
+        shell: pwsh
+        run: |
+          python -m unittest agent.tests.test_chat_runner agent.tests.test_chatgpt_bundle agent.tests.test_tools -v
+          python -m agent.sim.chat_runner chatgpt/examples/drop_test.json --pretty --out agent-results/chat-drop-windows.json
+          python agent/scripts/benchmark.py --skip-unavailable --output agent-results/benchmark-windows.json

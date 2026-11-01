@@ -2,6 +2,8 @@
 
 Это отдельное русскоязычное дерево документации для **проверенной сборки Minecraft 1.21.1 / NeoForge**. Названия методов подтверждаются исходниками Java, установленными JAR или официальной документацией. Версии и уровни достоверности фиксируются; неподтверждённые сведения отмечаются отдельно.
 
+[Область применения: только Minecraft](game-scope.md)
+
 ## Стандартные API CraftOS
 
 [Начало работы](getting-started.md) · [Основные API](core-apis.md) · [События](events.md) · [Сеть](networking.md) · [Периферия](peripherals.md) · [Математика и управление](maths-and-control.md) · [Интерфейс](ui-and-input.md) · [Черепахи и инвентари](turtles-and-inventories.md) · [Надёжность](reliability.md) · [Тестирование](testing-and-deployment.md)
@@ -24,6 +26,10 @@
 | [CBC Aero Velocity Fix](mods/cbc-aero-velocity-fix.md) | Физический патч без API |
 | [Sable Autonomous Chunk Loader](mods/sable-autonomous-chunk-loader.md) | Косвенное изменение радара |
 | [Полный список модов](modpack-audit.md) | Все JAR и результаты проверки CC-ссылок |
+
+## Инструменты программного агента
+
+[Автоматические проверки, имитация периферии, API-манифесты и регрессионные тесты](gocode-agent.md).
 
 ## Источники и статус проверки
 

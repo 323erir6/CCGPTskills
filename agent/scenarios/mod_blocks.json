@@ -1,0 +1,31 @@
+{
+  "world": {"gravity": [0, 0, 0]},
+  "masses": {"0": 25},
+  "normalized": {
+    "schema_version": 1,
+    "format": "create_structure_nbt",
+    "constructs": [{
+      "id": 0,
+      "palette": [
+        {"name": "minecraft:stone", "properties": {}},
+        {"name": "createpropulsion:creative_thruster", "properties": {"facing": "south"}},
+        {"name": "synaxis:dynamic_joint_motor", "properties": {"facing": "up"}},
+        {"name": "aeronautics:wooden_propeller", "properties": {"facing": "south"}}
+      ],
+      "blocks": [
+        {"pos": [0,0,0], "state": 0},
+        {"pos": [2,0,0], "state": 1},
+        {"pos": [1,0,0], "state": 2},
+        {"pos": [1,1,0], "state": 3}
+      ]
+    }]
+  },
+  "device_config": {"createpropulsion:creative_thruster": {"max_thrust_pn": 500}},
+  "events": [
+    {"command": "call", "key": "body1:createpropulsion:creative_thruster@2,0,0", "method": "setPowerNormalized", "args": [1]},
+    {"command": "call", "key": "body1:synaxis:dynamic_joint_motor@1,0,0", "method": "setPID", "args": [4,0,1]},
+    {"command": "call", "key": "body1:synaxis:dynamic_joint_motor@1,0,0", "method": "setTarget", "args": [0.5]},
+    {"command": "rpm", "key": "body1:aeronautics:wooden_propeller@1,1,0", "value": 60},
+    {"command": "advance", "ticks": 20}
+  ]
+}

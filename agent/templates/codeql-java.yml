@@ -1,0 +1,23 @@
+# EN: Install in a Java/NeoForge repository to scan Java, not Lua.
+# RU: Установить в репозиторий Java/NeoForge; Lua не анализируется.
+name: Java CodeQL
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+  security-events: write
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v4
+        with:
+          languages: java-kotlin
+          build-mode: none
+          queries: security-extended
+      - uses: github/codeql-action/analyze@v4

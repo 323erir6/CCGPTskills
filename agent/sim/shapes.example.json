@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "source": "EXAMPLE_ONLY_NOT_VERIFIED_AGAINST_MINECRAFT",
+  "target": {"minecraft": "1.21.1", "sable": "2.0.5"},
+  "shapes": {
+    "example:thin_plate[facing=north]": [[0, 0, 0, 1, 0.125, 1]],
+    "example:pass_through": []
+  }
+}

@@ -10,7 +10,7 @@
 
 ## CI
 
-В репозитории есть GitHub Actions `.github/workflows/lua-ci.yml`, проверяющий Lua 5.3 синтаксис и выполняющий тесты модулей `math3d` и `pid`. Успешный CI **не гарантирует** работу периферии модов внутри игры.
+В репозитории есть GitHub Actions `.github/workflows/lua-ci.yml`, проверяющий синтаксис Lua 5.3 и выполняющий тесты `math3d`, `pid`, `round` и `sublevel_pose`. Workflow GOCODE дополнительно проверяет Python/Lua-симуляторы в Ubuntu и JSON-runner для обычного ChatGPT в Windows. Успешный CI **не гарантирует** работу периферии модов внутри игры.
 
 ## Развёртывание
 

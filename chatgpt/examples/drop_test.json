@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "name": "Sable profile drop onto superflat ground",
+  "profile": "sable-2.0.5",
+  "ticks": 100,
+  "trace_every": 10,
+  "strict_shapes": true,
+  "world": {
+    "ground_y": 0
+  },
+  "bodies": [
+    {
+      "id": "construction",
+      "blocks": [
+        {"pos": [0, 0, 0], "name": "minecraft:iron_block"},
+        {"pos": [1, 0, 0], "name": "minecraft:iron_block"}
+      ],
+      "mass": 2,
+      "position": [0, 5, 0],
+      "velocity": [0, 0, 0]
+    }
+  ],
+  "assertions": [
+    {"type": "event", "event": "terrain_contact", "min_count": 1},
+    {"type": "position_range", "body": "construction", "axis": "y", "min": 0.49, "max": 0.51},
+    {"type": "max_unresolved_shapes", "max": 0}
+  ]
+}

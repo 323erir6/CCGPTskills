@@ -1,0 +1,303 @@
+{
+  "schema_version": 1,
+  "id": "cbc_programmable_fuzes",
+  "mod": "CBC Programmable Fuzes",
+  "version": "1.4.1",
+  "minecraft": "1.21.1",
+  "source_url": "https://github.com/323erir6/CBC-Programmable-Fuzes",
+  "source_commit": "d3ba2fd8cd0a74facd71c7f9c3718bdb66cc0282",
+  "interfaces": [
+    {
+      "name": "programmable_fuze",
+      "kind": "peripheral",
+      "notes": "Additional types: cbc_programmable_fuze; generic peripheral methods may augment CBC mounts.",
+      "methods": [
+        {
+          "name": "hasProgrammableFuze",
+          "arguments": [],
+          "returns": [
+            "boolean"
+          ],
+          "verification": "source-confirmed",
+          "source_path": "src/main/java/ua/ivan/cbcprogrammablefuzes/peripheral/FuzePeripheralMethods.java",
+          "description": ""
+        },
+        {
+          "name": "setProximity",
+          "arguments": [
+            "number: radius",
+            "boolean: active"
+          ],
+          "returns": [
+            "boolean"
+          ],
+          "verification": "source-confirmed",
+          "source_path": "src/main/java/ua/ivan/cbcprogrammablefuzes/peripheral/FuzePeripheralMethods.java",
+          "description": ""
+        },
+        {
+          "name": "setTimer",
+          "arguments": [
+            "number: seconds",
+            "boolean: active"
+          ],
+          "returns": [
+            "boolean"
+          ],
+          "verification": "source-confirmed",
+          "source_path": "src/main/java/ua/ivan/cbcprogrammablefuzes/peripheral/FuzePeripheralMethods.java",
+          "description": ""
+        },
+        {
+          "name": "setPersistent",
+          "arguments": [
+            "boolean: active"
+          ],
+          "returns": [
+            "boolean"
+          ],
+          "verification": "source-confirmed",
+          "source_path": "src/main/java/ua/ivan/cbcprogrammablefuzes/peripheral/FuzePeripheralMethods.java",
+          "description": ""
+        },
+        {
+          "name": "setFuzeChannel",
+          "arguments": [
+            "string: channel"
+          ],
+          "returns": [
+            "boolean"
+          ],
+          "verification": "source-confirmed",
+          "source_path": "src/main/java/ua/ivan/cbcprogrammablefuzes/peripheral/FuzePeripheralMethods.java",
+          "description": ""
+        },
+        {
+          "name": "listFuzeProjectiles",
+          "arguments": [
+            "string: channel"
+          ],
+          "returns": [
+            "table[]"
+          ],
+          "verification": "source-confirmed",
+          "source_path": "src/main/java/ua/ivan/cbcprogrammablefuzes/peripheral/FuzePeripheralMethods.java",
+          "description": ""
+        },
+        {
+          "name": "getFuzeTelemetry",
+          "arguments": [
+            "string: channel",
+            "string: uuid"
+          ],
+          "returns": [
+            "boolean",
+            "table?"
+          ],
+          "verification": "source-confirmed",
+          "source_path": "src/main/java/ua/ivan/cbcprogrammablefuzes/peripheral/FuzePeripheralMethods.java",
+          "description": ""
+        },
+        {
+          "name": "setFuzeProjectileTimer",
+          "arguments": [
+            "string: channel",
+            "string: uuid",
+            "number: seconds",
+            "boolean: active"
+          ],
+          "returns": [
+            "boolean"
+          ],
+          "verification": "source-confirmed",
+          "source_path": "src/main/java/ua/ivan/cbcprogrammablefuzes/peripheral/FuzePeripheralMethods.java",
+          "description": ""
+        },
+        {
+          "name": "setFuzeProjectileProximity",
+          "arguments": [
+            "string: channel",
+            "string: uuid",
+            "number: radius",
+            "boolean: active"
+          ],
+          "returns": [
+            "boolean"
+          ],
+          "verification": "source-confirmed",
+          "source_path": "src/main/java/ua/ivan/cbcprogrammablefuzes/peripheral/FuzePeripheralMethods.java",
+          "description": ""
+        },
+        {
+          "name": "setFuzeProjectilePersistent",
+          "arguments": [
+            "string: channel",
+            "string: uuid",
+            "boolean: active"
+          ],
+          "returns": [
+            "boolean"
+          ],
+          "verification": "source-confirmed",
+          "source_path": "src/main/java/ua/ivan/cbcprogrammablefuzes/peripheral/FuzePeripheralMethods.java",
+          "description": ""
+        },
+        {
+          "name": "setFuzeProjectileChannel",
+          "arguments": [
+            "string: channel",
+            "string: uuid",
+            "string: newChannel"
+          ],
+          "returns": [
+            "boolean"
+          ],
+          "verification": "source-confirmed",
+          "source_path": "src/main/java/ua/ivan/cbcprogrammablefuzes/peripheral/FuzePeripheralMethods.java",
+          "description": ""
+        },
+        {
+          "name": "setFuzeProjectileSettings",
+          "arguments": [
+            "string: channel",
+            "string: uuid",
+            "number: timerSeconds",
+            "boolean: timerActive",
+            "number: proximityRadius",
+            "boolean: proximityActive",
+            "boolean: persistent"
+          ],
+          "returns": [
+            "boolean"
+          ],
+          "verification": "source-confirmed",
+          "source_path": "src/main/java/ua/ivan/cbcprogrammablefuzes/peripheral/FuzePeripheralMethods.java",
+          "description": ""
+        },
+        {
+          "name": "hasTrajectoryCorrectionModule",
+          "arguments": [],
+          "returns": [
+            "boolean"
+          ],
+          "verification": "source-confirmed",
+          "source_path": "src/main/java/ua/ivan/cbcprogrammablefuzes/peripheral/FuzePeripheralMethods.java",
+          "description": ""
+        },
+        {
+          "name": "setCorrectionChannel",
+          "arguments": [
+            "string: channel"
+          ],
+          "returns": [
+            "boolean"
+          ],
+          "verification": "source-confirmed",
+          "source_path": "src/main/java/ua/ivan/cbcprogrammablefuzes/peripheral/FuzePeripheralMethods.java",
+          "description": ""
+        },
+        {
+          "name": "setCorrectionPersistent",
+          "arguments": [
+            "boolean: active"
+          ],
+          "returns": [
+            "boolean"
+          ],
+          "verification": "source-confirmed",
+          "source_path": "src/main/java/ua/ivan/cbcprogrammablefuzes/peripheral/FuzePeripheralMethods.java",
+          "description": ""
+        },
+        {
+          "name": "setImpactCoordinates",
+          "arguments": [
+            "number: x",
+            "number: y",
+            "number: z"
+          ],
+          "returns": [
+            "boolean"
+          ],
+          "verification": "source-confirmed",
+          "source_path": "src/main/java/ua/ivan/cbcprogrammablefuzes/peripheral/FuzePeripheralMethods.java",
+          "description": ""
+        },
+        {
+          "name": "listCorrectionProjectiles",
+          "arguments": [
+            "string: channel"
+          ],
+          "returns": [
+            "table[]"
+          ],
+          "verification": "source-confirmed",
+          "source_path": "src/main/java/ua/ivan/cbcprogrammablefuzes/peripheral/FuzePeripheralMethods.java",
+          "description": ""
+        },
+        {
+          "name": "getCorrectionTelemetry",
+          "arguments": [
+            "string: channel",
+            "string: uuid"
+          ],
+          "returns": [
+            "boolean",
+            "table?"
+          ],
+          "verification": "source-confirmed",
+          "source_path": "src/main/java/ua/ivan/cbcprogrammablefuzes/peripheral/FuzePeripheralMethods.java",
+          "description": ""
+        },
+        {
+          "name": "setCorrectionProjectileTarget",
+          "arguments": [
+            "string: channel",
+            "string: uuid",
+            "number: x",
+            "number: y",
+            "number: z"
+          ],
+          "returns": [
+            "boolean"
+          ],
+          "verification": "source-confirmed",
+          "source_path": "src/main/java/ua/ivan/cbcprogrammablefuzes/peripheral/FuzePeripheralMethods.java",
+          "description": ""
+        },
+        {
+          "name": "getLoadedProjectileInfo",
+          "arguments": [],
+          "returns": [
+            "boolean",
+            "table?"
+          ],
+          "verification": "source-confirmed",
+          "source_path": "src/main/java/ua/ivan/cbcprogrammablefuzes/peripheral/FuzePeripheralMethods.java",
+          "description": ""
+        },
+        {
+          "name": "getLoadedPropellantInfo",
+          "arguments": [],
+          "returns": [
+            "boolean",
+            "table?"
+          ],
+          "verification": "source-confirmed",
+          "source_path": "src/main/java/ua/ivan/cbcprogrammablefuzes/peripheral/FuzePeripheralMethods.java",
+          "description": ""
+        },
+        {
+          "name": "getCannonInfo",
+          "arguments": [],
+          "returns": [
+            "boolean",
+            "table?"
+          ],
+          "verification": "source-confirmed",
+          "source_path": "src/main/java/ua/ivan/cbcprogrammablefuzes/peripheral/FuzePeripheralMethods.java",
+          "description": ""
+        }
+      ]
+    }
+  ]
+}
