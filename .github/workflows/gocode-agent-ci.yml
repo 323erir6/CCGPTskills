@@ -36,9 +36,9 @@ jobs:
           sudo apt-get install -y lua5.3
       - name: Compile Lua files
         run: |
-          find lib tests examples agent/mocks agent/tests agent/sim agent/scenarios -type f -name '*.lua' -print0 | xargs -0 -r -n 1 luac5.3 -p
+          find lib tests examples agent/mocks agent/tests agent/sim agent/scenarios agent/projects/osprey -type f -name '*.lua' -print0 | xargs -0 -r -n 1 luac5.3 -p
       - name: Check Python syntax
-        run: python3 -m compileall -q agent/scripts agent/tests agent/sim
+        run: python3 -m compileall -q agent/scripts agent/tests agent/sim agent/projects/osprey
       - name: Run agent Python unit tests
         run: python3 -m unittest discover -s agent/tests -p 'test_*.py' -v
       - name: Run headless world simulator tests
@@ -60,9 +60,10 @@ jobs:
         run: python3 -m unittest agent.tests.test_native_rapier_bridge -v
       - name: OSPREY Create schematic and CC flight-test checks
         run: |
-          python3 -m unittest agent.projects.osprey.tests.test_build agent.projects.osprey.tests.test_runtime -v
+          python3 -m unittest discover -s agent/projects/osprey/tests -p 'test_*.py' -v
           lua5.3 agent/projects/osprey/tests/test_common.lua
           (cd agent/projects/osprey/lua && lua5.3 ../tests/test_onboard.lua)
+          (cd agent/projects/osprey/lua && lua5.3 ../tests/test_recorder.lua)
           python3 agent/projects/osprey/tools/build_schematic.py --out agent-results/OSPREY_Create.nbt --layout agent-results/osprey-layout.json
       - name: Run deterministic benchmark
         run: python3 agent/scripts/benchmark.py --output agent-results/benchmark.json

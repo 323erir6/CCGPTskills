@@ -66,3 +66,7 @@ The first suite tests NBT roundtrip, installed mod block IDs, fin/motor symmetry
 6. Repeat native physics tests against actual assembled construct; run regression checks with in-game logged motion.
 
 **Status by task:** layout `.nbt` generated + parsed, Lua modules implemented and syntax-checked, mock and synthetic scenarios pass; complete Sable assembly, motor thrust under fuel, physical steering, player/entity observation and 20–600 km reachability are **not validated in game**.
+
+## Independent read-only physics instrumentation
+
+The source-audited [read-only CC:Sable recorder and data-quality checks](qa/README.md) provide a separate, non-actuating telemetry chain and native-JNI generic freefall fixture. No target guidance or weapons performance is evaluated. Passing native/Synthetic QA is not release qualification; no live Minecraft instrumentation has yet been supplied.
