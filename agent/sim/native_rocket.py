@@ -15,6 +15,7 @@ from scipy.spatial.transform import Rotation
 
 from .native_rapier import NativeScene
 from .schematics import load
+from .rocket_source_profile import audit_sources, shape_for_block
 
 DT=1/40
 G=11.
@@ -87,7 +88,8 @@ def forces(state,t,dt=DT):
     return impulse_local,torque_local
 
 
-def simulate(nbt:Path,jar:Path,*,max_seconds=180.,trace_every_seconds=2.5):
+def simulate(nbt:Path,jar:Path,*,max_seconds=180.,trace_every_seconds=2.5,
+             source_jars:dict|None=None, strict_shapes:bool=False, ignite_at:float=0.0):
     content=load(nbt)
     if len(content['constructs'])!=1:raise ValueError('requires exactly one sublevel')
     c=content['constructs'][0]
@@ -95,19 +97,58 @@ def simulate(nbt:Path,jar:Path,*,max_seconds=180.,trace_every_seconds=2.5):
     names=[c['palette'][b['state']]['name'] for b in c['blocks']]
     if names.count('createpropulsion:solid_fuel_thruster')!=1:
         raise ValueError('solid-fuel thruster not found')
+    source=audit_sources(source_jars) if source_jars else None
+    shape_records={}
+    unresolved=[]
+    for b in c['blocks']:
+        state=c['palette'][b['state']]
+        shape,origin=shape_for_block(state,source) if source else (None,'no_jar_audit')
+        if shape is None:
+            unresolved.append({'name':state['name'],'pos':b['pos'],'reason':origin})
+            if strict_shapes:raise ValueError('Unverified native voxel shape '+state['name'])
+            shape=[[0,0,0,1,1,1]]
+        shape_records[tuple(b['pos'])]=(state['name'],state.get('properties',{}),shape,origin)
+    # Validate the saved fuel and reference mass; do not invent server-side state.
+    thruster=next(b for b in c['blocks'] if c['palette'][b['state']]['name']=='createpropulsion:solid_fuel_thruster')
+    thruster_nbt=thruster.get('block_entity') or {}
+    fuel_items=(thruster_nbt.get('Inventory') or {}).get('Items',[])
+    if len(fuel_items)!=1 or fuel_items[0].get('id')!='minecraft:coal_block':
+        raise ValueError('Saved thruster does not contain one coal block')
+    if thruster_nbt.get('BurnTime')!=16000:
+        raise ValueError('Saved fuel burn ticks differ from requested 13m20s')
+    chunk_loader=next((b.get('block_entity') or {} for b in c['blocks']
+        if c['palette'][b['state']]['name']=='sable_autonomous_chunk_loader:autonomous_chunk_loader'), {})
+    measured_mass=chunk_loader.get('IntactReferenceMass')
+    if measured_mass is not None and abs(float(measured_mass)-MASS)>1e-6:
+        raise ValueError('Reference mass differs; update mass properties before running')
     q=Rotation.from_euler('x',-45,degrees=True)
-    local_corners=np.array([[x-.5,y-.5,z-3] for x in (0.,1.) for y in (0.,1.) for z in (0.,6.)])
+    # Lowest collision point uses per-state bytecode-derived voxel boxes, not
+    # a fictitious full 1x1x6 prism. Unresolved blocks are clearly reported.
+    local_corners=[]
+    for b in c['blocks']:
+        boxes=shape_records[tuple(b['pos'])][2]
+        for x0,y0,z0,x1,y1,z1 in boxes:
+            for x in (x0,x1):
+                for y in (y0,y1):
+                    for z in (z0,z1):
+                        local_corners.append((b['pos'][0]+x-COM[0],b['pos'][1]+y-COM[1],b['pos'][2]+z-COM[2]))
+    local_corners=np.array(local_corners)
     minimum=np.min(q.apply(local_corners)[:,1])
     pos=np.array([0.,SURFACE+6.-minimum,0.])
     inertia=(13.875,13.875,.75) # uniform six cubes, MASS=4.5; assumption
     trace=[];flight_result=None;loaded_center=None
     with NativeScene(jar) as scene:
         scene.init()
-        material=scene.material('full_block')
-        scene.ground(SURFACE,0,0,radius=3)
-        scene.ship(1,pos.tolist(),q.as_quat().tolist(),MASS,COM,inertia,(0,0,0,0,0,5),
-                   [(int(b['pos'][0]),int(b['pos'][1]),int(b['pos'][2]),material)
-                    for b in c['blocks']])
+        ground_material=scene.material('world_grass',shapes=((0,0,0,1,1,1),))
+        scene.ground(SURFACE,0,0,radius=3,material=ground_material)
+        blocks=[]
+        for b in c['blocks']:
+            pblock=tuple(b['pos'])
+            name,properties,shape,provenance=shape_records[pblock]
+            key=name+':'+','.join(f'{k}={v}' for k,v in sorted(properties.items()))
+            mat=scene.material(key,shapes=tuple(map(tuple,shape)))
+            blocks.append((*pblock,mat))
+        scene.ship(1,pos.tolist(),q.as_quat().tolist(),MASS,COM,inertia,(0,0,0,0,0,5),blocks)
         limit=int(max_seconds/DT)
         prev=None
         for i in range(limit):
@@ -116,14 +157,16 @@ def simulate(nbt:Path,jar:Path,*,max_seconds=180.,trace_every_seconds=2.5):
             px,py,pz=state['position']
             vy=state['velocity'][1]
             rot=Rotation.from_quat(state['quat'])
-            btm=lowest_y(np.array(state['position']),rot)
+            btm=float(np.min(rot.apply(local_corners)[:,1])+py)
             # Only stream terrain where first contact becomes plausible.
             if py<250 and (i==0 or vy<0):
                 center=(math.floor(px/16),math.floor(pz/16))
                 if center!=loaded_center:
                     scene.ground(SURFACE,px,pz,radius=3)
                     loaded_center=center
-            impulse,torque=forces(state,now)
+            # A user-requested ignition at t=0 overrides the OFF state in NBT.
+            # The game-side redstone/CC event is not runnable outside Minecraft.
+            impulse,torque=forces(state,now) if now>=ignite_at else (np.zeros(3),np.zeros(3))
             if not np.isfinite(impulse).all() or not np.isfinite(torque).all():
                 raise ArithmeticError(f'non-finite force at {now}')
             if max(np.linalg.norm(impulse),np.linalg.norm(torque))>0:
@@ -131,7 +174,7 @@ def simulate(nbt:Path,jar:Path,*,max_seconds=180.,trace_every_seconds=2.5):
             scene.step(DT)
             contacts=scene.collisions()
             state_after=scene.state(1)
-            after_bottom=lowest_y(np.array(state_after['position']),Rotation.from_quat(state_after['quat']))
+            after_bottom=float(np.min(Rotation.from_quat(state_after['quat']).apply(local_corners)[:,1])+state_after['position'][1])
             if i%max(1,round(trace_every_seconds/DT))==0:
                 trace.append({'t':round((i+1)*DT,3),
                               'position':[round(v,5) for v in state_after['position']],
@@ -155,13 +198,18 @@ def simulate(nbt:Path,jar:Path,*,max_seconds=180.,trace_every_seconds=2.5):
                            'bottom_y':after_bottom}
     return {'engine':'unmodified Sable 2.0.5 JNI native Rapier, custom voxel collider',
             'input':str(nbt),'native_solver':'verified','rocket_mod_force_model':'approximate',
-            'geometry':'six full voxel cubes, schematic block coordinates exact; shapes unverified',
+            'geometry':'six schematic voxels; per-state geometry from JAR where verified; fallback explicitly marked',
+            'source_facts':source,
+            'unresolved_voxel_shapes':unresolved,
+            'reference_mass_from_nbt':measured_mass,
+            'ignition_override_seconds':ignite_at,
+            'strict_shape_validation':strict_shapes,
             'surface_y':SURFACE,'initial_position':pos.tolist(),
             'burn_seconds':BURN,'mass_assumed':MASS,
             'impact':flight_result,'trace':trace,
             'fidelity_notes':['native Rapier solver, CCD, contacts, quaternion dynamics',
                               'approximate sail orientations/drag forces',
-                              'mod server config and all per-block VoxelShapes not verified',
+                              'per-block VoxelShapes verified only for recorded JAR states; unknowns declared',
                               'fuel startup logic and chunk loader not executed in Minecraft VM']}
 
 
@@ -170,9 +218,18 @@ def main():
     parser.add_argument('nbt',type=Path)
     parser.add_argument('--jar',required=True,type=Path)
     parser.add_argument('--max-seconds',type=float,default=180)
+    parser.add_argument('--propulsion-jar',type=Path)
+    parser.add_argument('--sail-jar',type=Path)
+    parser.add_argument('--cbc-jar',type=Path)
+    parser.add_argument('--strict-shapes',action='store_true')
+    parser.add_argument('--ignite-at',type=float,default=0.0)
     parser.add_argument('--out',type=Path,required=True)
     a=parser.parse_args()
-    result=simulate(a.nbt,a.jar,max_seconds=a.max_seconds)
+    specified=(a.propulsion_jar,a.sail_jar,a.cbc_jar)
+    if any(specified) and not all(specified):parser.error('all three source JARs required')
+    source_jars=dict(zip(('propulsion','sail','cbc'),specified)) if all(specified) else None
+    result=simulate(a.nbt,a.jar,max_seconds=a.max_seconds,source_jars=source_jars,
+                    strict_shapes=a.strict_shapes,ignite_at=a.ignite_at)
     a.out.parent.mkdir(parents=True,exist_ok=True)
     a.out.write_text(json.dumps(result,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
     print(json.dumps({'impact':result['impact'],'engine':result['engine']},ensure_ascii=False))

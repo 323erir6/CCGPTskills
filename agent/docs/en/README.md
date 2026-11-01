@@ -106,3 +106,7 @@ The incremental voxel, rigid-body and CC:Tweaked simulator has an independent [E
 ## 13. Original native Sable Rapier integration
 
 See [Sable 2.0.5 native JNI bridge](native-sable-rapier.md) for actual voxel contact and rigid-body physics execution. Native physics is tested separately from approximate mod behavior; an in-game equality claim requires an end-to-end server trace.
+
+## 13. Installed JAR rocket source audit
+
+[JAR/bytecode verified rocket collision geometry, Sable MassTracker, thrust and sail equations](rocket-jar-source-audit.md).

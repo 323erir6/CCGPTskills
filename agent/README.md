@@ -51,3 +51,12 @@ Run: `lua5.3 agent/sim/run.lua agent/scenarios/falling_block.lua`.
 - [Русский: подключение Sable Rapier и ограничения](docs/ru/native-sable-rapier.md).
 - `agent/sim/native_rapier.py` extracts the original native library **from your own Sable JAR**; no native binaries or mod jars are committed.
 - `agent/sim/native_rocket.py` integrates Photomancy six-block rocket shapes and source-informed mod force adapters with original native rigid-body and voxel contact solver. The native solver is real but force provider and collision shape fidelity remains incomplete.
+
+## Source-audited rocket physics (installed JAR bytecode)
+
+- [Exact-jar rocket source audit (EN)](docs/en/rocket-jar-source-audit.md)
+- [Аудит байткода модпака (RU)](docs/ru/rocket-jar-source-audit.md)
+- [JAR-derived voxel geometry and fuel profile](sim/rocket_source_profile.py)
+- [Port of Sable MassTracker tensor equation](sim/rocket_mass_tracker.py)
+- Run `python3 -m agent.scripts.audit_rocket_jars --help` to inspect an actual Photomancy rocket and installed mod JARs.
+- For `native_rocket.py`, explicitly provide the Propulsion, nested Simulated and CBC JARs to replace approximate full cubes with inspected shapes. Unverified states remain flagged; use `--strict-shapes` to block approximations.
