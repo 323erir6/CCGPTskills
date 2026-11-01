@@ -7,6 +7,8 @@ on:
       - 'lib/**'
       - 'tests/**'
       - 'examples/**'
+      - 'chatgpt/**'
+      - 'skills/**'
       - '.github/workflows/gocode-agent-ci.yml'
   pull_request:
     paths:
@@ -14,6 +16,8 @@ on:
       - 'lib/**'
       - 'tests/**'
       - 'examples/**'
+      - 'chatgpt/**'
+      - 'skills/**'
       - '.github/workflows/gocode-agent-ci.yml'
   workflow_dispatch:
 
@@ -46,6 +50,7 @@ jobs:
           lua5.3 agent/tests/test_world.lua
           lua5.3 agent/tests/test_craftos.lua
           lua5.3 agent/sim/run.lua agent/scenarios/falling_block.lua > agent-results-world.json
+          python3 -m agent.sim.chat_runner chatgpt/examples/drop_test.json --pretty --out agent-results/chat-drop.json
       - name: Test binary NBT import and voxel geometry
         run: python3 -m unittest agent.tests.test_schematics agent.tests.test_rigid agent.tests.test_simulate_schematic -v
       - name: Test functional mod blocks and integration
@@ -76,12 +81,20 @@ jobs:
         run: |
           mkdir -p dist
           zip -q -r dist/cc-tweaked-lua-toolkit.zip lib examples
+          python3 agent/scripts/build_chatgpt_bundle.py
       - name: Upload CraftOS toolkit
         if: success()
         uses: actions/upload-artifact@v4
         with:
           name: cc-tweaked-lua-toolkit-${{ github.run_id }}
           path: dist/cc-tweaked-lua-toolkit.zip
+          retention-days: 14
+      - name: Upload ordinary ChatGPT simulator bundle
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sable-chatgpt-bundle-${{ github.run_id }}
+          path: dist/sable-chatgpt-bundle.zip
           retention-days: 14
       - name: Upload test report
         if: always()
@@ -93,3 +106,18 @@ jobs:
             agent-results-world.json
           if-no-files-found: warn
           retention-days: 14
+
+  windows-chat-smoke:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run Windows-safe simulator and runner tests
+        shell: pwsh
+        run: |
+          python -m unittest agent.tests.test_chat_runner agent.tests.test_chatgpt_bundle agent.tests.test_tools -v
+          python -m agent.sim.chat_runner chatgpt/examples/drop_test.json --pretty --out agent-results/chat-drop-windows.json
+          python agent/scripts/benchmark.py --skip-unavailable --output agent-results/benchmark-windows.json

@@ -17,11 +17,16 @@ jobs:
           ref: main
           persist-credentials: true
       - name: Install formatter
-        run: python3 -m pip install ruff
+        run: python3 -m pip install 'ruff==0.14.3'
       - name: Apply only deterministic Python fixes
         run: |
-          ruff check agent --fix --select F401,I001 --unsafe-fixes=false || true
+          ruff check agent --fix --select F401,I001 --unsafe-fixes=false
           ruff format agent
+      - name: Verify formatted Python
+        run: |
+          python3 -m compileall -q agent
+          python3 -m unittest discover -s agent/tests -p 'test_*.py' -v
+          python3 -m unittest discover -s agent/projects/osprey/tests -p 'test_*.py' -v
       - name: Submit a pull request when files changed
         env:
           GH_TOKEN: ${{ github.token }}

@@ -30,4 +30,14 @@ class TestVoxelRigid(unittest.TestCase):
         w.advance(1)
         self.assertEqual([],w.events)
 
+    def test_rejects_invalid_vectors_and_flags(self):
+        with self.assertRaisesRegex(ValueError,"gravity"):
+            World(gravity=(0,float("nan"),0))
+        w=World(gravity=(0,0,0))
+        with self.assertRaisesRegex(ValueError,"static"):
+            w.add(shape([(0,0,0)]),static="false")
+        body=w.add(shape([(0,0,0)]))
+        with self.assertRaisesRegex(ValueError,"impulse"):
+            w.impulse(body,(1,float("inf"),0))
+
 if __name__=='__main__': unittest.main()

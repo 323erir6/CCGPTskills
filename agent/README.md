@@ -28,6 +28,12 @@ Use `[goloop]` as a standalone line followed by a checklist of tasks to request 
 
 Run: `lua5.3 agent/sim/run.lua agent/scenarios/falling_block.lua`.
 
+For ordinary ChatGPT Chat or Windows without Lua, use the bounded JSON runner:
+
+`python -m agent.sim.chat_runner chatgpt/examples/drop_test.json --pretty --out report.json`
+
+Build the uploadable archive with `python agent/scripts/build_chatgpt_bundle.py`. The archive includes project instructions, the scenario schema, the source-confirmed Sable 2.0.5 profile and the Python geometry runner.
+
 ## Accurate saved block geometry
 
 - [Create / Photomancy NBT geometry import and collision rules](sim/SCHEMATICS.md)

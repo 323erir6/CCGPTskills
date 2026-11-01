@@ -12,6 +12,8 @@ class TestTextOnlySimulation(unittest.TestCase):
             path.write_bytes(gzip.compress(make_create()))
             result=execute([path],ticks=2,gravity=(0,0,0),strict_shapes=True)
         self.assertEqual(2,result['tick'])
+        self.assertEqual(40,result['physics_hz'])
+        self.assertEqual('sable-2.0.5',result['profile'])
         self.assertEqual(2,result['bodies'][0]['block_geometry']['blocks'])
         self.assertEqual('create_structure_nbt',result['bodies'][0]['format'])
 

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Sable Simulator"
+  short_description: "Simulate Minecraft Sable constructions in text"
+  default_prompt: "Use $sable-simulator to run a deterministic Minecraft Sable construction scenario and explain the fidelity limits."

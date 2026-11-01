@@ -4,7 +4,7 @@
     {
       "id": "geometry",
       "command": [
-        "lua5.3",
+        "{lua}",
         "tests/math3d_test.lua"
       ],
       "expected": "math3d tests passed"
@@ -12,7 +12,7 @@
     {
       "id": "pid",
       "command": [
-        "lua5.3",
+        "{lua}",
         "tests/pid_test.lua"
       ],
       "expected": "pid tests passed"
@@ -20,7 +20,7 @@
     {
       "id": "rounding",
       "command": [
-        "lua5.3",
+        "{lua}",
         "tests/round_test.lua"
       ],
       "expected": "round tests passed"
@@ -28,7 +28,7 @@
     {
       "id": "sublevel",
       "command": [
-        "lua5.3",
+        "{lua}",
         "tests/sublevel_pose_test.lua"
       ],
       "expected": "sublevel_pose tests passed"
@@ -36,7 +36,7 @@
     {
       "id": "mock_peripherals",
       "command": [
-        "lua5.3",
+        "{lua}",
         "agent/tests/test_mocks.lua"
       ],
       "expected": "mock tests passed"
@@ -44,7 +44,7 @@
     {
       "id": "mock_integration",
       "command": [
-        "lua5.3",
+        "{lua}",
         "agent/tests/test_integration.lua"
       ],
       "expected": "synthetic integration tests passed"
@@ -52,7 +52,7 @@
     {
       "id": "api_contracts",
       "command": [
-        "python3",
+        "{python}",
         "agent/scripts/validate_api.py"
       ],
       "expected": "0 errors"
@@ -60,7 +60,7 @@
     {
       "id": "static_review",
       "command": [
-        "python3",
+        "{python}",
         "agent/scripts/review.py"
       ],
       "expected": "0 high-signal findings"
@@ -68,7 +68,7 @@
     {
       "id": "synthetic_world",
       "command": [
-        "lua5.3",
+        "{lua}",
         "agent/tests/test_world.lua"
       ],
       "expected": "deterministic world tests passed"
@@ -76,7 +76,7 @@
     {
       "id": "synthetic_scenario",
       "command": [
-        "lua5.3",
+        "{lua}",
         "agent/sim/run.lua",
         "agent/scenarios/falling_block.lua"
       ],
@@ -85,7 +85,7 @@
     {
       "id": "craftos_programs",
       "command": [
-        "lua5.3",
+        "{lua}",
         "agent/tests/test_craftos.lua"
       ],
       "expected": "simulated CraftOS program tests passed"
@@ -93,7 +93,7 @@
     {
       "id": "nbt_geometry",
       "command": [
-        "python3",
+        "{python}",
         "-m",
         "unittest",
         "agent.tests.test_schematics",
@@ -105,7 +105,7 @@
     {
       "id": "schematic_physics_replay",
       "command": [
-        "python3",
+        "{python}",
         "-m",
         "unittest",
         "agent.tests.test_simulate_schematic",
@@ -116,7 +116,7 @@
     {
       "id": "mod_functional_blocks",
       "command": [
-        "python3",
+        "{python}",
         "-m",
         "unittest",
         "agent.tests.test_mod_devices",

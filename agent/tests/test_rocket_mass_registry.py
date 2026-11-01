@@ -1,15 +1,18 @@
 """Version-pinned mass rules for Create: Simulated and Sable 2.0.5."""
 from pathlib import Path
+import os
 import unittest
 from agent.sim.rocket_mass_registry import MassRegistry
 from agent.sim.rocket_mass_tracker import mass_properties
 from agent.sim.schematics import load
 
-ROOT=Path('/mnt/data/rocket_sim/jars')
+ROOT = Path(os.environ["GOCODE_ROCKET_JAR_DIR"]) if os.getenv("GOCODE_ROCKET_JAR_DIR") else None
+SCHEMATIC = Path(os.environ["GOCODE_ROCKET_SCHEMATIC"]) if os.getenv("GOCODE_ROCKET_SCHEMATIC") else None
 
 class TestRocketMassRegistry(unittest.TestCase):
     def test_real_modpack_reference_mass(self):
-        if not ROOT.exists(): self.skipTest('Installed JARs unavailable on CI')
+        if ROOT is None or SCHEMATIC is None or not ROOT.is_dir() or not SCHEMATIC.is_file():
+            self.skipTest('set GOCODE_ROCKET_JAR_DIR and GOCODE_ROCKET_SCHEMATIC')
         names={'sable':'sable-neoforge-1.21.1-2.0.5.jar',
              'simulated':'simulated-nested.jar',
              'propulsion':'createpropulsion-1.1.5.jar',
@@ -17,7 +20,7 @@ class TestRocketMassRegistry(unittest.TestCase):
              'cc':'cc-tweaked-1.21.1-forge-1.120.0.jar',
              'chunk_loader':'sable-autonomous-chunk-loader-1.8.1.jar'}
         reg=MassRegistry({key:ROOT/value for key,value in names.items()})
-        rocket=load('/mnt/data/rszo_rocket_v0.nbt')['constructs'][0]
+        rocket=load(SCHEMATIC)['constructs'][0]
         report=reg.report(rocket)
         self.assertEqual([1.,1.,.25,.25,1.,1.], [b['mass'] for b in report['blocks']])
         self.assertEqual(report['total_mass'],4.5)

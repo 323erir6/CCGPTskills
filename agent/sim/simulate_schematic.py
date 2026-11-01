@@ -23,8 +23,15 @@ def _vector(vals,length,label):
     return tuple(float(x) for x in vals)
 
 
-def execute(schematics, *, ticks=20, physics_hz=120, layout=None, registry=None,
-            strict_shapes=False, gravity=(0,-9.81,0), trace=False):
+def execute(schematics, *, ticks=20, physics_hz=None, layout=None, registry=None,
+            strict_shapes=False, gravity=None, trace=False,
+            profile="sable-2.0.5", ground_y=None, ground_friction=None):
+    if type(ticks) is not int or ticks < 0 or ticks > 100_000:
+        raise ValueError("ticks must be an integer between 0 and 100000")
+    if trace and ticks > 10_000:
+        raise ValueError("trace is limited to 10000 ticks")
+    if profile not in ("sable-2.0.5", "generic"):
+        raise ValueError("profile must be sable-2.0.5 or generic")
     definitions=[]
     for path in schematics:
         info=load(Path(path))
@@ -37,7 +44,9 @@ def execute(schematics, *, ticks=20, physics_hz=120, layout=None, registry=None,
         layout=[{}]
     if len(layout)!=len(definitions):
         raise ValueError("layout length does not match physical construction count")
-    world=World(physics_hz=physics_hz,gravity=gravity)
+    world=World(physics_hz=physics_hz,gravity=gravity,
+                profile=profile if profile != "generic" else None,
+                ground_y=ground_y,ground_friction=ground_friction)
     info=[]
     for idx,((path,format,construct),placement) in enumerate(zip(definitions,layout)):
         if not isinstance(placement,dict):raise ValueError("invalid layout entry")
@@ -58,7 +67,8 @@ def execute(schematics, *, ticks=20, physics_hz=120, layout=None, registry=None,
     for _ in range(ticks):
         snapshot=world.advance(1)
         if trace:snapshots.append(snapshot)
-    return {"status":"ok","tick":world.tick,"physics_hz":physics_hz,
+    return {"status":"ok","tick":world.tick,"physics_hz":world.physics_hz,
+            "profile":profile,"gravity":world.gravity,
             "bodies":info,"snapshot":world.snapshot(),
             "trace":snapshots if trace else None,
             "fidelity":"schematic voxels + translational OBB CCD; not exact Sable physics"}
@@ -70,7 +80,11 @@ def main(argv=None):
     parser.add_argument("--layout",type=Path,help="JSON list: position, orientation quaternion, velocity, mass")
     parser.add_argument("--shape-registry",type=Path)
     parser.add_argument("--strict-shapes",action="store_true")
-    parser.add_argument("--hz",type=int,default=120)
+    parser.add_argument("--profile",choices=("sable-2.0.5","generic"),default="sable-2.0.5")
+    parser.add_argument("--hz",type=int)
+    parser.add_argument("--gravity",type=float,nargs=3,metavar=("X","Y","Z"))
+    parser.add_argument("--ground-y",type=float)
+    parser.add_argument("--ground-friction",type=float)
     parser.add_argument("--ticks",type=int,default=20)
     parser.add_argument("--trace",action="store_true")
     parser.add_argument("--out",type=Path,help="write report JSON to file")
@@ -79,7 +93,9 @@ def main(argv=None):
         layout=json.loads(args.layout.read_text("utf-8")) if args.layout else None
         registry=ShapeRegistry.from_json(args.shape_registry) if args.shape_registry else None
         result=execute(args.schematics,ticks=args.ticks,physics_hz=args.hz,layout=layout,
-                       registry=registry,strict_shapes=args.strict_shapes,trace=args.trace)
+                       registry=registry,strict_shapes=args.strict_shapes,trace=args.trace,
+                       profile=args.profile,gravity=tuple(args.gravity) if args.gravity else None,
+                       ground_y=args.ground_y,ground_friction=args.ground_friction)
         encoded=json.dumps(result,sort_keys=True,ensure_ascii=False)
         if args.out:
             args.out.parent.mkdir(parents=True,exist_ok=True)

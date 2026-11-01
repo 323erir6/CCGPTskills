@@ -5,6 +5,8 @@ from pathlib import Path
 
 from agent.sim.native_rapier import SABLE_NAME, NESTED_JAR, BINARIES_NAME
 
+SABLE_JAR = os.getenv("SABLE_JAR_PATH") or os.getenv("GOCODE_SABLE_JAR")
+
 
 class TestNativeRapierBridge(unittest.TestCase):
     def test_source_available_without_redistributing_binary(self):
@@ -21,10 +23,10 @@ class TestNativeRapierBridge(unittest.TestCase):
                         '"STEP"', '"IMPULSE"', '"STATE"', '"COLLISIONS"'):
             self.assertIn(command, source)
 
-    @unittest.skipUnless(os.getenv("SABLE_JAR_PATH"), "installed Sable JAR not provided")
+    @unittest.skipUnless(SABLE_JAR, "set GOCODE_SABLE_JAR to the user-owned Sable 2.0.5 JAR")
     def test_real_native_voxel_terrain_contact(self):
         from agent.sim.native_rapier import sublevel_box_regression
-        state = sublevel_box_regression(Path(os.environ["SABLE_JAR_PATH"]))
+        state = sublevel_box_regression(Path(SABLE_JAR))
         self.assertAlmostEqual(state["position"][1], 168.5, delta=.03)
         self.assertEqual(state["velocity"], [0., 0., 0.])
 

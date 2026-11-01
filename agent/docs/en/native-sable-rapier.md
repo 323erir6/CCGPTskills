@@ -60,5 +60,5 @@ The **native Sable Rapier solver is now real**, but the *complete simulator is n
 
 ```sh
 python -m unittest agent.tests.test_native_rapier_bridge -v
-SABLE_JAR_PATH=/path/to/sable-neoforge-1.21.1-2.0.5.jar python -m unittest agent.tests.test_native_rapier_bridge -v
+GOCODE_SABLE_JAR=/path/to/sable-neoforge-1.21.1-2.0.5.jar python -m unittest agent.tests.test_native_rapier_bridge -v
 ```

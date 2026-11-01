@@ -10,7 +10,7 @@
 
 ## CI
 
-The repository includes a lightweight GitHub Actions workflow in `.github/workflows/lua-ci.yml`. It checks Lua 5.3 parsing and executes the pure `math3d` and `pid` tests. Passing CI **does not** prove that modded peripheral APIs are available or that every sample works in-game.
+The repository includes a lightweight GitHub Actions workflow in `.github/workflows/lua-ci.yml`. It checks Lua 5.3 parsing and executes the pure `math3d`, `pid`, `round` and `sublevel_pose` tests. The GOCODE workflow additionally runs the Python/Lua simulators on Ubuntu and the data-only Chat runner on Windows. Passing CI **does not** prove that modded peripheral APIs are available or that every sample works in-game.
 
 ## Deployment
 

@@ -2,6 +2,8 @@
 
 This independent English documentation tree targets the **audited Minecraft 1.21.1 / NeoForge modpack**. All source-backed declarations come from Java repositories, installed JAR bytecode, or official CC:Tweaked documentation. The exact build versions and evidence level are recorded; uncertain information is explicitly labeled.
 
+[Minecraft-only project scope](game-scope.md)
+
 ## Core CraftOS
 
 [Getting started](getting-started.md) · [Core APIs](core-apis.md) · [Events](events.md) · [Networking](networking.md) · [Peripheral discovery](peripherals.md) · [Mathematics and control](maths-and-control.md) · [UI and input](ui-and-input.md) · [Turtles and inventories](turtles-and-inventories.md) · [Reliability](reliability.md) · [Testing and deployment](testing-and-deployment.md)

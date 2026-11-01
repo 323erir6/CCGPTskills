@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import importlib.util
+import sys
 import unittest
 from pathlib import Path
 
@@ -37,9 +38,20 @@ class ToolsTest(unittest.TestCase):
 
     def test_benchmark_runner(self):
         benchmark = load('benchmark')
-        report = benchmark.run([{'id': 'ok', 'command': ['python3', '-c', 'print("done")'],
+        report = benchmark.run([{'id': 'ok', 'command': ['{python}', '-c', 'print("done")'],
                                  'expected': 'done'}], Path(__file__).parent, 3)
         self.assertEqual(report['passed'], 1)
+
+    def test_benchmark_runner_can_skip_missing_lua(self):
+        benchmark = load('benchmark')
+        report = benchmark.run(
+            [{'id': 'lua', 'command': ['{lua}', '-v'], 'expected': ''}],
+            Path(__file__).parent, 3,
+            runtimes={'python': sys.executable, 'lua': None},
+            skip_unavailable=True,
+        )
+        self.assertEqual(report['skipped'], 1)
+        self.assertTrue(report['cases'][0]['skipped'])
 
 
 if __name__ == '__main__':

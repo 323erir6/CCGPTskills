@@ -9,6 +9,21 @@ Source-backed ComputerCraft/CC:Tweaked Lua reference for Minecraft 1.21.1 NeoFor
 
 Executable Lua helpers are shared under [lib/](lib/). Documentation prose is separate in `docs/en/` and `docs/ru/`. API support is version-specific and must be verified against installed devices.
 
+## Ordinary ChatGPT Chat
+
+The simulator includes a bounded, data-only Python runner that works without Lua:
+
+```sh
+python -m agent.sim.chat_runner chatgpt/examples/drop_test.json --pretty --out report.json
+```
+
+- [ChatGPT project instructions](chatgpt/en/PROJECT_INSTRUCTIONS.md)
+- [Короткий запуск українською](chatgpt/uk/QUICKSTART.md)
+- [Reusable Sable simulator skill](skills/sable-simulator/SKILL.md)
+- [Minecraft-only scope in English](docs/en/game-scope.md) / [по-русски](docs/ru/game-scope.md)
+
+Build the single-file upload bundle with `python agent/scripts/build_chatgpt_bundle.py`. GitHub Actions publishes the same ZIP as an artifact. ChatGPT must have Python/data-analysis execution to run the simulator inside a chat; otherwise it can prepare a scenario but must label it as not executed.
+
 ## GOCODE engineering tools
 
 - **[Coding-agent infrastructure / EN](agent/docs/en/README.md)**

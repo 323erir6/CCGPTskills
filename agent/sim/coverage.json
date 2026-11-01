@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "status": "partial_emulation",
-  "engine": "GOCODE deterministic Lua 5.3 simulator",
+  "engine": "GOCODE deterministic Lua 5.3 and Python text simulators",
   "target": {
     "minecraft": "1.21.1",
     "cc_tweaked": "1.120.0",
@@ -81,7 +81,8 @@
       "system": "output",
       "features": [
         "text-only JSON scenario snapshots",
-        "deterministic assertions"
+        "deterministic assertions",
+        "bounded data-only Python runner for ordinary ChatGPT"
       ],
       "accuracy": "exact for this simulator",
       "limitations": [
@@ -104,7 +105,9 @@
   ],
   "validation": [
     "agent/tests/test_world.lua",
-    "agent/scenarios/falling_block.lua"
+    "agent/scenarios/falling_block.lua",
+    "agent/tests/test_chat_runner.py",
+    "chatgpt/examples/drop_test.json"
   ],
   "principle": "No approximation is presented as a verified Minecraft or Sable implementation. Run real mod tests or compare recorded traces before marking a subsystem as conformance-verified.",
   "schematic_geometry": {

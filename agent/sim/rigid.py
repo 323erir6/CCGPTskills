@@ -5,10 +5,10 @@ is continuous for fixed orientation during each time step. Rotation/collisions
 between simultaneous rotating bodies remain approximate, not Rapier-equivalent.
 """
 from __future__ import annotations
-from dataclasses import dataclass, field
-from math import ceil, sqrt, isfinite
+from dataclasses import dataclass
+from math import isfinite, sqrt
 from .sable205 import Sable205, damp
-from .geometry import Compound, Vector, add, sub, mul, dot, norm, cross, quaternion_axes
+from .geometry import Compound, Vector, add, cross, dot, mul, quaternion_axes, sub
 
 
 def qstep(q:tuple[float,float,float,float],w:Vector,dt:float):
@@ -18,7 +18,25 @@ def qstep(q:tuple[float,float,float,float],w:Vector,dt:float):
         y+.5*dt*(-wx*z+wy*a+wz*x),
         z+.5*dt*(wx*y-wy*x+wz*a))
     length=sqrt(sum(v*v for v in qq))
+    if length <= 1e-15 or not isfinite(length):
+        raise ValueError("invalid quaternion integration result")
     return tuple(v/length for v in qq)
+
+
+def _finite_vector(value, length, label):
+    if not isinstance(value, (tuple, list)) or len(value) != length:
+        raise ValueError(f"{label} must contain {length} finite numbers")
+    if not all(type(item) in (int, float) and isfinite(item) for item in value):
+        raise ValueError(f"{label} must contain {length} finite numbers")
+    return tuple(float(item) for item in value)
+
+
+def _unit_quaternion(value):
+    quaternion = _finite_vector(value, 4, "orientation")
+    magnitude = sqrt(sum(item * item for item in quaternion))
+    if magnitude <= 1e-12:
+        raise ValueError("orientation quaternion must be nonzero")
+    return tuple(item / magnitude for item in quaternion)
 
 
 def centroid_inertia(comp:Compound,mass:float):
@@ -67,7 +85,8 @@ class Body:
                 "unresolved_shapes":self.geometry.unresolved}
 
 class World:
-    def __init__(self,physics_hz=None,gravity=None,max_pair_checks=100000,ground_y=None,ground_friction=None,profile=None):
+    def __init__(self,physics_hz=None,gravity=None,max_pair_checks=100000,ground_y=None,
+                 ground_friction=None,profile=None,max_events=50000):
         if profile is not None and profile != "sable-2.0.5":
             raise ValueError("unknown simulation profile")
         exact = Sable205() if profile else None
@@ -76,50 +95,75 @@ class World:
         ground_friction = ground_friction if ground_friction is not None else exact.contact_friction if exact else 0.5
         self.profile = profile
         self.default_damping = exact.universal_drag if exact else 0.0
-        if not isinstance(physics_hz,int) or physics_hz<20 or physics_hz>2000 or physics_hz%20:
+        if type(physics_hz) is not int or physics_hz<20 or physics_hz>2000 or physics_hz%20:
             raise ValueError("physics_hz must be multiple of 20 between 20 and 2000")
+        gravity = _finite_vector(gravity, 3, "gravity")
+        if type(max_pair_checks) is not int or max_pair_checks < 1 or max_pair_checks > 100_000_000:
+            raise ValueError("max_pair_checks must be between 1 and 100000000")
         self.physics_hz=physics_hz
-        self.gravity=tuple(gravity)
+        self.gravity=gravity
         self.max_pair_checks=max_pair_checks
         self.bodies:dict[int,Body]={}
         self.tick=0
         self.physics_step=0
         self.time=0.
         self.events=[]
+        if type(max_events) is not int or max_events < 1 or max_events > 1_000_000:
+            raise ValueError("max_events must be between 1 and 1000000")
+        self.max_events=max_events
+        self.events_dropped=0
         self.contact_checks=0
         self._contact_pairs=set()
-        if ground_y is not None and not isfinite(ground_y):raise ValueError("invalid ground height")
-        if not isfinite(ground_friction) or ground_friction<0:raise ValueError("invalid ground friction")
-        self.ground_y=ground_y
-        self.ground_friction=ground_friction
+        if ground_y is not None and (type(ground_y) not in (int, float) or not isfinite(ground_y)):
+            raise ValueError("invalid ground height")
+        if type(ground_friction) not in (int, float) or not isfinite(ground_friction) or ground_friction<0:
+            raise ValueError("invalid ground friction")
+        self.ground_y=None if ground_y is None else float(ground_y)
+        self.ground_friction=float(ground_friction)
         self._grounded_ids=set()
         self.physics_callbacks=[]  # (world, dt) -> per-substep forces from mod actors
         self._transient_forces={}
         self._transient_torques={}
         self.force_log=[]
 
+    def _record_event(self,event):
+        if len(self.events) < self.max_events:
+            self.events.append(event)
+        else:
+            self.events_dropped += 1
+
     def add(self,geometry:Compound,*,mass=1.,position=(0.,0.,0.),velocity=(0.,0.,0.),
             orientation=(1.,0.,0.,0.),angular_velocity=(0.,0.,0.),damping=None,restitution=0.,static=False):
         damping = self.default_damping if damping is None else damping
-        if not isfinite(mass) or mass<=0:raise ValueError("positive finite mass required")
-        if not isfinite(damping) or damping<0:raise ValueError("invalid damping")
-        if not 0<=restitution<=1:raise ValueError("invalid restitution")
+        if type(mass) not in (int, float) or not isfinite(mass) or mass<=0:
+            raise ValueError("positive finite mass required")
+        if type(damping) not in (int, float) or not isfinite(damping) or damping<0:
+            raise ValueError("invalid damping")
+        if type(restitution) not in (int, float) or not isfinite(restitution) or not 0<=restitution<=1:
+            raise ValueError("invalid restitution")
+        if type(static) is not bool:
+            raise ValueError("static must be a boolean")
+        position = _finite_vector(position, 3, "position")
+        velocity = _finite_vector(velocity, 3, "velocity")
+        orientation = _unit_quaternion(orientation)
+        angular_velocity = _finite_vector(angular_velocity, 3, "angular_velocity")
         com,inertia=centroid_inertia(geometry,mass)
         id=max(self.bodies.keys(),default=0)+1
-        b=Body(id,geometry,mass,tuple(position),tuple(velocity),tuple(orientation),
-               tuple(angular_velocity),damping,restitution,com,inertia,static=static)
+        b=Body(id,geometry,float(mass),position,velocity,orientation,
+               angular_velocity,float(damping),float(restitution),com,inertia,
+               static=static)
         self.bodies[id]=b
         return id
 
     def force(self,id:int,f:Vector):
         b=self.bodies[id]
         if b.static:raise ValueError("cannot accelerate static body")
-        b.persistent_force=add(b.persistent_force,tuple(f))
+        b.persistent_force=add(b.persistent_force,_finite_vector(f,3,"force"))
 
     def impulse(self,id:int,dp:Vector):
         b=self.bodies[id]
         if b.static:raise ValueError("cannot impulse static body")
-        b.velocity=add(b.velocity,mul(tuple(dp),1/b.mass))
+        b.velocity=add(b.velocity,mul(_finite_vector(dp,3,"impulse"),1/b.mass))
 
     def step_force(self,id:int,f:Vector,*,world_point:Vector|None=None,source:str="mod"):
         """Queue a force for this physics substep, and torque about physical COM.
@@ -129,12 +173,10 @@ class World:
         """
         body=self.bodies[id]
         if body.static:raise ValueError("cannot force a static body")
-        if len(f)!=3 or not all(isfinite(x) for x in f):raise ValueError("invalid force")
-        force=tuple(float(x) for x in f)
+        force=_finite_vector(f,3,"force")
         self._transient_forces[id]=add(self._transient_forces.get(id,(0.,0.,0.)),force)
         if world_point is not None:
-            if len(world_point)!=3 or not all(isfinite(x) for x in world_point):
-                raise ValueError("invalid application point")
+            world_point=_finite_vector(world_point,3,"application point")
             # Position is center of mass in this model; local geometry is
             # translated by -com to calculate point positions.
             torque=cross(sub(tuple(world_point),body.position),force)
@@ -147,9 +189,7 @@ class World:
     def step_torque(self,id:int,torque:Vector,*,source="mod"):
         body=self.bodies[id]
         if body.static:raise ValueError("cannot torque a static body")
-        if len(torque)!=3 or not all(isfinite(x) for x in torque):
-            raise ValueError("invalid torque")
-        force=tuple(float(x) for x in torque)
+        force=_finite_vector(torque,3,"torque")
         self._transient_torques[id]=add(self._transient_torques.get(id,(0.,0.,0.)),force)
         if len(self.force_log)<50000:
             self.force_log.append({"tick":self.tick,"substep":self.physics_step,
@@ -234,7 +274,7 @@ class World:
             if not body.static:body.position=add(body.position,mul(body.velocity,remaining))
         pair=(a_id,b_id)
         if pair not in self._contact_pairs:
-            self.events.append({"event":"body_contact","a":a_id,"b":b_id,
+            self._record_event({"event":"body_contact","a":a_id,"b":b_id,
                                 "normal":n,"time":self.time+time})
         self._contact_pairs={pair}
 
@@ -267,11 +307,13 @@ class World:
                 body.velocity=(vx*scale,vy,vz*scale)
             grounded.add(body.id)
             if body.id not in self._grounded_ids:
-                self.events.append({"event":"terrain_contact","body":body.id,
+                self._record_event({"event":"terrain_contact","body":body.id,
                                     "ground_y":self.ground_y,"time":self.time+dt})
         self._grounded_ids=grounded
 
     def snapshot(self):
         return {"status":"ok","tick":self.tick,"substep":self.physics_step,
                 "time":self.time,"contact_checks":self.contact_checks,
-                "events":self.events,"bodies":[self.bodies[k].snapshot() for k in sorted(self.bodies)]}
+                "events":[dict(event) for event in self.events],
+                "events_dropped":self.events_dropped,
+                "bodies":[self.bodies[k].snapshot() for k in sorted(self.bodies)]}
