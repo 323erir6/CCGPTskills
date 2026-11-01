@@ -1,0 +1,30 @@
+modLoader = "javafml"
+loaderVersion = "[4,)"
+license = "MIT"
+
+[[mods]]
+modId = "sable_headless_telemetry"
+version = "${version}"
+displayName = "Sable Headless Telemetry"
+description = '''Records deterministic JSON telemetry from the real dedicated-server Sable runtime.'''
+
+[[dependencies.sable_headless_telemetry]]
+modId = "neoforge"
+type = "required"
+versionRange = "[21.1.248,21.2)"
+ordering = "NONE"
+side = "SERVER"
+
+[[dependencies.sable_headless_telemetry]]
+modId = "minecraft"
+type = "required"
+versionRange = "[1.21.1]"
+ordering = "NONE"
+side = "SERVER"
+
+[[dependencies.sable_headless_telemetry]]
+modId = "sable"
+type = "required"
+versionRange = "[2.0.5,2.0.6)"
+ordering = "AFTER"
+side = "SERVER"

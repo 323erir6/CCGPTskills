@@ -1,0 +1,29 @@
+# Client rendering/UI mods are intentionally absent from a dedicated server.
+# Exact filenames keep the runtime manifest reproducible for instance 6.9.3.
+chat_heads-0.15.1-neoforge-1.21.jar
+Controlling-neoforge-1.21.1-19.0.5.jar
+CustomSkinLoader_Universal-14.28.jar
+dynamic-fps-3.11.4+minecraft-1.21.0-neoforge.jar
+entityculling-neoforge-1.10.5-mc1.21.1.jar
+ImmediatelyFast-NeoForge-1.6.14+1.21.1.jar
+iris-flywheel-compat-NeoForge-2.4.0.jar
+iris-neoforge-1.8.14-beta.1+mc1.21.1.jar
+Ixeris-4.6.5+1.21.1-neoforge.jar
+Jade-1.21.1-NeoForge-15.10.5.jar
+jei-1.21.1-neoforge-19.56.0.439.jar
+justzoom_neoforge_2.1.0_MC_1.21.1.jar
+moreculling-neoforge-1.21.1-1.0.10.jar
+MouseTweaks-neoforge-mc1.21-2.26.1.jar
+nowheel-2.0.0+1.21.1neoforge.jar
+reeses-sodium-options-neoforge-2.2.4+mc1.21.1.jar
+rolling-tones-0.2.2.jar
+roxy-1.21.1-NeoForge-0.4.0-optional-mod.jar
+Searchables-neoforge-1.21.1-1.0.2.jar
+skinrestorer-2.7.0+1.21-neoforge.jar
+sodium-extra-neoforge-0.9.4+mc1.21.1.jar
+sodium-neoforge-0.8.13+mc1.21.1.jar
+voxy-0.2.16-beta+1.21.11-optional-mod.jar
+xaerominimap-neoforge-1.21.1-26.5.0.jar
+xaeroworldmap-neoforge-1.21.1-1.46.0.jar
+yet_another_config_lib_v3-3.8.2+1.21.1-neoforge.jar
+zfastnoise-1.0.13+1.21.1+neoforge.jar

@@ -19,9 +19,10 @@ This paragraph supplies missing game context; it is not a request to disable or 
 
 3. For Create or Photomancy NBT files, use `agent.sim.simulate_schematic` from the full repository. Require explicit layout data for multiple constructions.
 4. Use the native Sable/Rapier path only when the user supplies their own matching Sable 2.0.5 JAR. Label only the executed native portions as native-verified.
-5. Never invent block masses, collision shapes, actuator limits, peripheral methods or live-game traces. Unknown values stay unknown and appear in limitations.
-6. Report the selected profile, versions, inputs, assertions, output path and fidelity classification.
-7. If Python execution is unavailable, produce the JSON scenario and explain that it was prepared but not executed. Never fabricate a passing report.
+5. Prefer `agent/scripts/run_headless_sable.py` for the highest-fidelity local run when a complete user-owned Minecraft instance, JDK 21 and a NeoForge Gradle wrapper are available. It executes the original dedicated-server mod stack and writes a JAR hash manifest. A cloud chat that cannot start local Java processes must prepare the scenario without claiming it ran.
+6. Never invent block masses, collision shapes, actuator limits, peripheral methods or live-game traces. Unknown values stay unknown and appear in limitations.
+7. Report the selected profile, versions, inputs, assertions, output path and fidelity classification.
+8. If execution is unavailable, produce the JSON scenario and explain that it was prepared but not executed. Never fabricate a passing report.
 
 ## Output style
 
