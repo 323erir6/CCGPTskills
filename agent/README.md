@@ -60,3 +60,7 @@ Run: `lua5.3 agent/sim/run.lua agent/scenarios/falling_block.lua`.
 - [Port of Sable MassTracker tensor equation](sim/rocket_mass_tracker.py)
 - Run `python3 -m agent.scripts.audit_rocket_jars --help` to inspect an actual Photomancy rocket and installed mod JARs.
 - For `native_rocket.py`, explicitly provide the Propulsion, nested Simulated and CBC JARs to replace approximate full cubes with inspected shapes. Unverified states remain flagged; use `--strict-shapes` to block approximations.
+
+### Sable modpack mass tags / Точна маса блоків
+
+`agent/sim/rocket_mass_registry.py` resolves installed-JAR nested block tags and source-defined Sable mass rules. The two symmetric sails have mass 0.25; the other four rocket blocks use default 1.0, totaling 4.5. The resulting inertia tensor is (17.875, 17.875, 0.750). These are the installed-JAR baseline values; custom datapacks may override. `agent/tests/test_rocket_mass_registry.py` verifies both constructed fixtures and original JARs when available. The native model still does not execute the original NeoForge server block entities.

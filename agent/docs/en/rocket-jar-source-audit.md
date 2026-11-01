@@ -51,3 +51,56 @@ python3 -m agent.sim.native_rocket rszo_rocket_v0.nbt --jar sable-neoforge-1.21.
 The collision solver is the **actual** Sable 2.0.5 native binary; this is verified by JNI execution and contact events. The applied engine/sail force schedule is **a separate Python reimplementation**, not the execution of NeoForge block-entity tick classes. The mass and per-block collision registry depend on active tags, modifiers and runtime blockstates. The input NBT has an **OFF** computer and **zero** redstone input, so `--ignite-at 0` injects a test-only launch event. It is not contained in the original save.
 
 Additionally, the autonomous chunk loader, fuze, entity explosions, exact all-block `getCollisionShape` results and loaded-chunk behavior are not run in the original Minecraft runtime. Therefore do not label any resulting impact coordinate as fully game-exact.
+
+## Mass and inertia correction from installed Sable datapacks
+
+The source registry now reads `data/<namespace>/tags/block/**/*.json` and
+`data/<namespace>/physics_block_properties/*.json` from the installed JARs.
+It resolves nested tags and the ordered Sable mass-property definitions.
+This is modeled after Sable 2.0.5 `PhysicsBlockPropertiesDefinitionLoader`
+and `MassTracker.build`. The `--simulated-jar`, `--cc-jar`, and
+`--chunk-loader-jar` flags activate this check for actual modpack resources.
+
+The two `simulated:white_symmetric_sail` blocks appear in the
+`create:windmill_sails` tag. Sable includes that tag in `sable:super_light`,
+where the default mass is 0.25 per block. The other four schematic blocks
+use Sable's 1.0 default in these installed JAR resources.
+
+| Position Z | Block | Mass |
+|---:|---|---:|
+| 0 | solid-fuel thruster | 1.00 |
+| 1 | CC advanced computer | 1.00 |
+| 2 | symmetric sail | 0.25 |
+| 3 | symmetric sail | 0.25 |
+| 4 | autonomous chunk loader | 1.00 |
+| 5 | HE shell | 1.00 |
+
+**Mass = 4.5**, independently matching the saved `IntactReferenceMass`.
+**Center of mass** in local block coordinates: `(0.5, 0.5, 3.0)`.
+**Principal inertia** for the straight six-block layout under the Sable
+per-block inertia formula: `(17.875, 17.875, 0.75)` (not the previously
+assumed `(13.875, 13.875, 0.75)`).
+
+With source-derived masses and the existing original native Rapier solver,
+the approximate replay produces **first native terrain contact** at about
+`186.475 s`. Its first contact point is `(10, 168, 97004)` and the body
+center at the reporting step is `(13.325,168.027,97016.172)`. This is a
+**model result, not a confirmed in-game impact**: custom datapacks, engine
+BlockEntity tick execution, runtime VoxelShapes for two unresolved blocks,
+autonomous chunk behavior and CBC fuse remain unverified. A previous
+`14.825 s` impact using **uniform per-block mass** was invalidated by
+this corrected tensor and must not be reused as an accurate result.
+
+Example (source audited, no custom world datapacks):
+
+```sh
+python3 -m agent.sim.native_rocket rszo_rocket_v0.nbt \
+  --jar sable-neoforge-1.21.1-2.0.5.jar \
+  --propulsion-jar createpropulsion-1.1.5.jar \
+  --sail-jar simulated-nested.jar \
+  --cbc-jar createbigcannons-5.11.7+mc.1.21.1.jar \
+  --simulated-jar simulated-nested.jar \
+  --cc-jar cc-tweaked-1.21.1-forge-1.120.0.jar \
+  --chunk-loader-jar sable-autonomous-chunk-loader-1.8.1.jar \
+  --max-seconds 280 --out agent-results/rocket-native-mass-audited.json
+```

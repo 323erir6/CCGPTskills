@@ -16,6 +16,8 @@ from scipy.spatial.transform import Rotation
 from .native_rapier import NativeScene
 from .schematics import load
 from .rocket_source_profile import audit_sources, shape_for_block
+from .rocket_mass_registry import MassRegistry
+from .rocket_mass_tracker import mass_properties
 
 DT=1/40
 G=11.
@@ -65,7 +67,7 @@ def lowest_y(position,rotation):
     return float(position[1]+np.min(rotation.apply(coords)[:,1]))
 
 
-def forces(state,t,dt=DT):
+def forces(state,t,dt=DT,com=COM):
     q=np.array(state['quat'])
     rot=Rotation.from_quat(q)
     position=np.array(state['position'])
@@ -76,7 +78,7 @@ def forces(state,t,dt=DT):
     impulse_local=np.array([0.,0.,accel*dt])
     torque_local=np.zeros(3)
     for point,normal in SAILS:
-        offset=point-COM
+        offset=point-com
         world_offset=rot.apply(offset)
         vpoint=vel+np.cross(w,world_offset)
         vlocal=rot.inv().apply(vpoint)
@@ -89,7 +91,8 @@ def forces(state,t,dt=DT):
 
 
 def simulate(nbt:Path,jar:Path,*,max_seconds=180.,trace_every_seconds=2.5,
-             source_jars:dict|None=None, strict_shapes:bool=False, ignite_at:float=0.0):
+             source_jars:dict|None=None, strict_shapes:bool=False, ignite_at:float=0.0,
+             mass_jars:dict|None=None):
     content=load(nbt)
     if len(content['constructs'])!=1:raise ValueError('requires exactly one sublevel')
     c=content['constructs'][0]
@@ -121,6 +124,34 @@ def simulate(nbt:Path,jar:Path,*,max_seconds=180.,trace_every_seconds=2.5,
     measured_mass=chunk_loader.get('IntactReferenceMass')
     if measured_mass is not None and abs(float(measured_mass)-MASS)>1e-6:
         raise ValueError('Reference mass differs; update mass properties before running')
+    # Source-derived state mass is used when modpack JAR resources are supplied.
+    mass_audit=None
+    if mass_jars:
+        registry=MassRegistry(mass_jars)
+        mass_audit=registry.report(c)
+        if measured_mass is not None and abs(mass_audit['total_mass']-measured_mass)>1e-5:
+            raise ValueError('Sable tag mass does not match saved reference mass')
+        masses=[]
+        for b,record in zip(c['blocks'],mass_audit['blocks']):
+            xyz=tuple(b['pos'])
+            shape=shape_records[xyz][2]
+            # Sable MassTracker BLOCK_CENTER_OF_MASS uses the collision shape
+            # bounding box center, clipped to unit block bounds.
+            mins=[min(box[i] for box in shape) for i in range(3)]
+            maxs=[max(box[i+3] for box in shape) for i in range(3)]
+            center=tuple((max(0.,mins[i])+min(1.,maxs[i]))/2 for i in range(3))
+            masses.append({'pos':xyz,'mass':record['mass'],'local_center':center})
+        source_mass_properties=mass_properties(masses)
+        mass=source_mass_properties['mass']
+        com=np.array(source_mass_properties['center_of_mass'])
+        inertia=tuple(source_mass_properties['inertia_diagonal'])
+        if source_mass_properties['off_diagonal_present']:
+            raise ValueError('Native ship bridge currently needs diagonal inertia; full tensor required')
+    else:
+        source_mass_properties=None
+        mass=MASS
+        com=COM.copy()
+        inertia=(13.875,13.875,.75)
     q=Rotation.from_euler('x',-45,degrees=True)
     # Lowest collision point uses per-state bytecode-derived voxel boxes, not
     # a fictitious full 1x1x6 prism. Unresolved blocks are clearly reported.
@@ -131,11 +162,10 @@ def simulate(nbt:Path,jar:Path,*,max_seconds=180.,trace_every_seconds=2.5,
             for x in (x0,x1):
                 for y in (y0,y1):
                     for z in (z0,z1):
-                        local_corners.append((b['pos'][0]+x-COM[0],b['pos'][1]+y-COM[1],b['pos'][2]+z-COM[2]))
+                        local_corners.append((b['pos'][0]+x-com[0],b['pos'][1]+y-com[1],b['pos'][2]+z-com[2]))
     local_corners=np.array(local_corners)
     minimum=np.min(q.apply(local_corners)[:,1])
     pos=np.array([0.,SURFACE+6.-minimum,0.])
-    inertia=(13.875,13.875,.75) # uniform six cubes, MASS=4.5; assumption
     trace=[];flight_result=None;loaded_center=None
     with NativeScene(jar) as scene:
         scene.init()
@@ -148,7 +178,7 @@ def simulate(nbt:Path,jar:Path,*,max_seconds=180.,trace_every_seconds=2.5,
             key=name+':'+','.join(f'{k}={v}' for k,v in sorted(properties.items()))
             mat=scene.material(key,shapes=tuple(map(tuple,shape)))
             blocks.append((*pblock,mat))
-        scene.ship(1,pos.tolist(),q.as_quat().tolist(),MASS,COM,inertia,(0,0,0,0,0,5),blocks)
+        scene.ship(1,pos.tolist(),q.as_quat().tolist(),mass,com,inertia,(0,0,0,0,0,5),blocks)
         limit=int(max_seconds/DT)
         prev=None
         for i in range(limit):
@@ -166,7 +196,7 @@ def simulate(nbt:Path,jar:Path,*,max_seconds=180.,trace_every_seconds=2.5,
                     loaded_center=center
             # A user-requested ignition at t=0 overrides the OFF state in NBT.
             # The game-side redstone/CC event is not runnable outside Minecraft.
-            impulse,torque=forces(state,now) if now>=ignite_at else (np.zeros(3),np.zeros(3))
+            impulse,torque=forces(state,now,com=com) if now>=ignite_at else (np.zeros(3),np.zeros(3))
             if not np.isfinite(impulse).all() or not np.isfinite(torque).all():
                 raise ArithmeticError(f'non-finite force at {now}')
             if max(np.linalg.norm(impulse),np.linalg.norm(torque))>0:
@@ -205,7 +235,8 @@ def simulate(nbt:Path,jar:Path,*,max_seconds=180.,trace_every_seconds=2.5,
             'ignition_override_seconds':ignite_at,
             'strict_shape_validation':strict_shapes,
             'surface_y':SURFACE,'initial_position':pos.tolist(),
-            'burn_seconds':BURN,'mass_assumed':MASS,
+            'burn_seconds':BURN,'mass_used':mass,'mass_source':('jar_tags_and_sable_mass_tracker' if mass_jars else 'saved_reference_plus_uniform_inertia_approximation'),
+            'mass_audit':mass_audit,'mass_properties':source_mass_properties,
             'impact':flight_result,'trace':trace,
             'fidelity_notes':['native Rapier solver, CCD, contacts, quaternion dynamics',
                               'approximate sail orientations/drag forces',
@@ -221,6 +252,9 @@ def main():
     parser.add_argument('--propulsion-jar',type=Path)
     parser.add_argument('--sail-jar',type=Path)
     parser.add_argument('--cbc-jar',type=Path)
+    parser.add_argument('--simulated-jar',type=Path,help='Simulated nested JAR for mass tags')
+    parser.add_argument('--cc-jar',type=Path,help='CC:Tweaked JAR for mass tags')
+    parser.add_argument('--chunk-loader-jar',type=Path,help='Autonomous loader JAR for mass tags')
     parser.add_argument('--strict-shapes',action='store_true')
     parser.add_argument('--ignite-at',type=float,default=0.0)
     parser.add_argument('--out',type=Path,required=True)
@@ -228,8 +262,16 @@ def main():
     specified=(a.propulsion_jar,a.sail_jar,a.cbc_jar)
     if any(specified) and not all(specified):parser.error('all three source JARs required')
     source_jars=dict(zip(('propulsion','sail','cbc'),specified)) if all(specified) else None
+    mass_jars=None
+    extras=(a.simulated_jar,a.cc_jar,a.chunk_loader_jar)
+    if any(extras):
+        if not all(extras) or not source_jars:
+            parser.error('mass auditing requires --propulsion-jar, --sail-jar, --cbc-jar, --simulated-jar, --cc-jar, --chunk-loader-jar')
+        mass_jars={'sable':a.jar,'simulated':a.simulated_jar,
+                   'propulsion':a.propulsion_jar,'cbc':a.cbc_jar,
+                   'cc':a.cc_jar,'chunk_loader':a.chunk_loader_jar}
     result=simulate(a.nbt,a.jar,max_seconds=a.max_seconds,source_jars=source_jars,
-                    strict_shapes=a.strict_shapes,ignite_at=a.ignite_at)
+                    strict_shapes=a.strict_shapes,ignite_at=a.ignite_at,mass_jars=mass_jars)
     a.out.parent.mkdir(parents=True,exist_ok=True)
     a.out.write_text(json.dumps(result,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
     print(json.dumps({'impact':result['impact'],'engine':result['engine']},ensure_ascii=False))
