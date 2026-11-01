@@ -8,7 +8,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from math import ceil, sqrt, isfinite
 from .sable205 import Sable205, damp
-from .geometry import Compound, Vector, add, sub, mul, dot, norm
+from .geometry import Compound, Vector, add, sub, mul, dot, norm, cross, quaternion_axes
 
 
 def qstep(q:tuple[float,float,float,float],w:Vector,dt:float):
@@ -88,11 +88,15 @@ class World:
         self.events=[]
         self.contact_checks=0
         self._contact_pairs=set()
-        if ground_y is not None and not isfinite(ground_y):raise ValueError('invalid ground height')
-        if not isfinite(ground_friction) or ground_friction<0:raise ValueError('invalid ground friction')
+        if ground_y is not None and not isfinite(ground_y):raise ValueError("invalid ground height")
+        if not isfinite(ground_friction) or ground_friction<0:raise ValueError("invalid ground friction")
         self.ground_y=ground_y
         self.ground_friction=ground_friction
         self._grounded_ids=set()
+        self.physics_callbacks=[]  # (world, dt) -> per-substep forces from mod actors
+        self._transient_forces={}
+        self._transient_torques={}
+        self.force_log=[]
 
     def add(self,geometry:Compound,*,mass=1.,position=(0.,0.,0.),velocity=(0.,0.,0.),
             orientation=(1.,0.,0.,0.),angular_velocity=(0.,0.,0.),damping=None,restitution=0.,static=False):
@@ -117,15 +121,65 @@ class World:
         if b.static:raise ValueError("cannot impulse static body")
         b.velocity=add(b.velocity,mul(tuple(dp),1/b.mass))
 
+    def step_force(self,id:int,f:Vector,*,world_point:Vector|None=None,source:str="mod"):
+        """Queue a force for this physics substep, and torque about physical COM.
+
+        World-frame force and world-frame application point; moments use
+        the *rotated* schematic center of mass. Not a native Rapier solver.
+        """
+        body=self.bodies[id]
+        if body.static:raise ValueError("cannot force a static body")
+        if len(f)!=3 or not all(isfinite(x) for x in f):raise ValueError("invalid force")
+        force=tuple(float(x) for x in f)
+        self._transient_forces[id]=add(self._transient_forces.get(id,(0.,0.,0.)),force)
+        if world_point is not None:
+            if len(world_point)!=3 or not all(isfinite(x) for x in world_point):
+                raise ValueError("invalid application point")
+            # Position is center of mass in this model; local geometry is
+            # translated by -com to calculate point positions.
+            torque=cross(sub(tuple(world_point),body.position),force)
+            self._transient_torques[id]=add(self._transient_torques.get(id,(0.,0.,0.)),torque)
+        if len(self.force_log)<50000:
+            self.force_log.append({"tick":self.tick,"substep":self.physics_step,
+                                   "body":id,"force":force,"point":world_point,
+                                   "source":source})
+
+    def step_torque(self,id:int,torque:Vector,*,source="mod"):
+        body=self.bodies[id]
+        if body.static:raise ValueError("cannot torque a static body")
+        if len(torque)!=3 or not all(isfinite(x) for x in torque):
+            raise ValueError("invalid torque")
+        force=tuple(float(x) for x in torque)
+        self._transient_torques[id]=add(self._transient_torques.get(id,(0.,0.,0.)),force)
+        if len(self.force_log)<50000:
+            self.force_log.append({"tick":self.tick,"substep":self.physics_step,
+                                   "body":id,"torque":force,"source":source})
+
+    def add_physics_callback(self,callback):
+        if not callable(callback):raise TypeError("physics callback must be callable")
+        self.physics_callbacks.append(callback)
+
     def advance(self,ticks=1):
         if not isinstance(ticks,int) or ticks<0 or ticks>100000:raise ValueError("invalid tick count")
         dt=1/self.physics_hz
         for _ in range(ticks):
             for substep in range(self.physics_hz//20):
+                self._transient_forces={}
+                self._transient_torques={}
+                for callback in tuple(self.physics_callbacks):callback(self,dt)
                 for id,b in self.bodies.items():
                     if b.static:continue
-                    acceleration=add(self.gravity,mul(b.persistent_force,1/b.mass))
+                    total_force=add(b.persistent_force,self._transient_forces.get(id,(0.,0.,0.)))
+                    acceleration=add(self.gravity,mul(total_force,1/b.mass))
                     b.velocity=add(b.velocity,mul(acceleration,dt))
+                    torque=self._transient_torques.get(id,(0.,0.,0.))
+                    # Approximate diagonal inertia in the body's local frame.
+                    axes=quaternion_axes(b.orientation)
+                    local_torque=tuple(dot(torque,axis) for axis in axes)
+                    local_alpha=tuple(local_torque[i]/b.inertia[i] if b.inertia[i]>1e-12 else 0.
+                                      for i in range(3))
+                    alpha=tuple(sum(axes[j][i]*local_alpha[j] for j in range(3)) for i in range(3))
+                    b.angular_velocity=add(b.angular_velocity,mul(alpha,dt))
                 self._move(dt)
                 self._resolve_flat_ground(dt)
                 for b in self.bodies.values():
@@ -185,9 +239,10 @@ class World:
         self._contact_pairs={pair}
 
     def _resolve_flat_ground(self,dt):
-        """Contact with a static horizontal plane using rotated voxel geometry.
+        """Approximate infinite superflat surface using each body's rotated voxel shape.
 
-        Friction is approximate Coulomb damping, not the actual Rapier manifold solver.
+        Ground collision is exact for a stationary full-cube contact plane, but
+        tangential Coulomb friction is an engineering approximation, not Rapier.
         """
         if self.ground_y is None:return
         grounded=set()
@@ -201,6 +256,8 @@ class World:
             body.position=(body.position[0],body.position[1]+max(0,self.ground_y-bottom),body.position[2])
             if body.velocity[1]<0:
                 body.velocity=(body.velocity[0],0.,body.velocity[2])
+            # Dry friction: tangential speed is reduced by mu * normal_acceleration * dt.
+            # The actual Sable/Rapier manifold solver includes angular impulses and sleep.
             vx,vy,vz=body.velocity
             horizontal=sqrt(vx*vx+vz*vz)
             normal_acceleration=max(0.,-self.gravity[1])

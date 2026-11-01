@@ -112,6 +112,18 @@
         "-v"
       ],
       "expected": ""
+    },
+    {
+      "id": "mod_functional_blocks",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "agent.tests.test_mod_devices",
+        "agent.tests.test_mod_manifest",
+        "-v"
+      ],
+      "expected": ""
     }
   ]
 }

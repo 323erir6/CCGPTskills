@@ -97,3 +97,10 @@ Before implementing a complex CC:Tweaked control program, use `agent/sim/` to re
 ## Schematic geometry fidelity
 
 For .nbt imports distinguish Create and Photomancy v1 by root NBT tags. Prefer Python compound-voxel `agent/sim/geometry.py` and `rigid.py` instead of the Lua sphere-based test model. Preserve sublevels, palettes, block NBT and relative poses. Check `unresolved_block_shapes` before trusting collision results; do not claim exact Rapier/Sable physics, modded VoxelShapes or live-game agreement from synthetic fixture tests.
+
+## Minecraft mod devices and peripheral contracts
+
+- Use `agent/sim/mod_devices.py` and `agent/sim/mod_runtime.py` when testing code that controls functional blocks; exact installed mod names and versions are recorded in `agent/docs/en/mod-functional-blocks.md` and `agent/docs/ru/mod-functional-blocks.md`.
+- The 11,149-ID registry `agent/sim/mod_devices_manifest.json.gz` is a verified blockstate inventory, **not** a claim that 11,149 block behaviors were implemented. Only models explicitly defined and tested in the device runtime are supported; otherwise return `unsupported` and relevant diagnostics.
+- Preserve method spelling and arguments confirmed by the installed JAR and do not silently manufacture physically unknown thrust, fuel, stress or controller limits.
+- Simulated Create/Aeronautics/Propulsion/Synaxis/NeoPeripheral state transitions and physics are approximate except where version-pinned source equations were verified. Return limitations in machine-readable reports.

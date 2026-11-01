@@ -48,6 +48,10 @@ jobs:
           lua5.3 agent/sim/run.lua agent/scenarios/falling_block.lua > agent-results-world.json
       - name: Test binary NBT import and voxel geometry
         run: python3 -m unittest agent.tests.test_schematics agent.tests.test_rigid agent.tests.test_simulate_schematic -v
+      - name: Test functional mod blocks and integration
+        run: |
+          python3 -m unittest agent.tests.test_mod_devices agent.tests.test_mod_auxiliary agent.tests.test_mod_forces agent.tests.test_mod_manifest -v
+          python3 -m agent.sim.mod_cli agent/scenarios/mod_blocks.json --out agent-results/mod_blocks.json
       - name: Run deterministic benchmark
         run: python3 agent/scripts/benchmark.py --output agent-results/benchmark.json
       - name: Static Lua review

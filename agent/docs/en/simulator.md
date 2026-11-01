@@ -125,3 +125,7 @@ Use `python3 agent/sim/simulate_schematic.py construction.nbt --ticks 100 --trac
 ## Version-pinned Sable 2.0.5 physics
 
 When testing Minecraft 1.21.1 NeoForge modpack builds, use [Sable 2.0.5 source-confirmed physics defaults and formulas](sable-2.0.5-physics.md). This profile includes the original Rapier fork damping rule and default friction combination; the voxel collision solver remains approximate.
+
+## Mod functional blocks
+
+[See functional Create/Aeronautics/Propulsion/Synaxis actuator models and the modpack block registry](mod-functional-blocks.md). The emulator is for deterministic regression testing and is not an exact native-mod implementation.

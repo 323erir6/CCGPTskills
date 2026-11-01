@@ -35,3 +35,11 @@ Run: `lua5.3 agent/sim/run.lua agent/scenarios/falling_block.lua`.
 - [Binary NBT regression tests](tests/test_schematics.py) · [rigid-body regression tests](tests/test_rigid.py)
 
 - **Sable 2.0.5 source-matched physics formulas / Формулы физики Sable 2.0.5:** [English](docs/en/sable-2.0.5-physics.md) / [Русский](docs/ru/sable-2.0.5-physics.md).
+
+## Functional mod blocks / Функциональные блоки модов
+
+- [EN: source-grounded functional block models](docs/en/mod-functional-blocks.md)
+- [RU: модели функциональных блоков](docs/ru/mod-functional-blocks.md)
+- [Complete machine-readable block registry](sim/mod_devices_manifest.json.gz) (gzip-compressed JSON; actual installed modpack, 11,149 IDs, 51 modeled)
+- CLI example: `python3 -m agent.sim.mod_cli agent/scenarios/mod_blocks.json --out agent-results/mod_blocks.json`.
+- The registry includes unknown/decorative blocks; **51 behavioral models does not imply full mod compatibility**.
