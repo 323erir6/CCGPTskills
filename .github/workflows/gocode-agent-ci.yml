@@ -64,6 +64,9 @@ jobs:
           lua5.3 agent/projects/osprey/tests/test_common.lua
           (cd agent/projects/osprey/lua && lua5.3 ../tests/test_onboard.lua)
           (cd agent/projects/osprey/lua && lua5.3 ../tests/test_recorder.lua)
+          (cd agent/projects/osprey/lua && lua5.3 ../tests/test_diagnostics.lua)
+          (cd agent/projects/osprey/lua && lua5.3 ../tests/test_diagnostics_sender.lua)
+          (cd agent/projects/osprey/lua && lua5.3 ../tests/test_diagnostics_receiver.lua)
           python3 agent/projects/osprey/tools/build_schematic.py --out agent-results/OSPREY_Create.nbt --layout agent-results/osprey-layout.json
       - name: Run deterministic benchmark
         run: python3 agent/scripts/benchmark.py --output agent-results/benchmark.json
