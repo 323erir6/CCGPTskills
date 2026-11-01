@@ -110,6 +110,16 @@
     "chatgpt/examples/drop_test.json"
   ],
   "principle": "No approximation is presented as a verified Minecraft or Sable implementation. Run real mod tests or compare recorded traces before marking a subsystem as conformance-verified.",
+  "headless_real_server": {
+    "runner": "agent/scripts/run_headless_sable.py",
+    "telemetry_mod": "agent/headless",
+    "classification": "live-server-executed for exact recorded JAR hashes, configs, world and commands",
+    "limitations": [
+      "client-only rendering and UI mods are excluded from the dedicated server",
+      "a different world, config, datapack or JAR hash is a different runtime",
+      "the supplied scenario validates Sable assembly and motion, not every mod block behavior"
+    ]
+  },
   "schematic_geometry": {
     "formats": [
       "create_structure_nbt",

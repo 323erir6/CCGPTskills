@@ -24,6 +24,8 @@ python -m agent.sim.chat_runner chatgpt/examples/drop_test.json --pretty --out r
 
 Build the single-file upload bundle with `python agent/scripts/build_chatgpt_bundle.py`. GitHub Actions publishes the same ZIP as an artifact. ChatGPT must have Python/data-analysis execution to run the simulator inside a chat; otherwise it can prepare a scenario but must label it as not executed.
 
+For the highest local fidelity, [the headless NeoForge runner](agent/docs/en/headless-sable-server.md) starts the real version-pinned 6.9.3 Minecraft 1.21.1 dedicated-server stack with the user's original Sable 2.0.5 and server-compatible mod JARs. It records Sable telemetry and exact JAR hashes instead of reimplementing mod forces.
+
 ## GOCODE engineering tools
 
 - **[Coding-agent infrastructure / EN](agent/docs/en/README.md)**

@@ -13,6 +13,7 @@ Choose the narrowest verified path:
 - For an uploaded Create or Photomancy NBT, use `agent.sim.simulate_schematic`; require explicit world layout for multiple constructions.
 - For CC:Tweaked code, use the bounded CraftOS mocks and exact API manifests.
 - For native contact behavior, use `agent.sim.native_rapier` only with the user's matching Sable 2.0.5 JAR. Do not redistribute it.
+- For maximum local fidelity, use `agent/scripts/run_headless_sable.py` with the user's complete version-matched instance. This executes real NeoForge server ticks, normal mod JARs and Sable rather than reimplemented forces. Preserve the generated JAR hash manifest and server log.
 
 Read `agent/sim/coverage.json` before making fidelity claims. Prefer the Sable 2.0.5 profile. Keep unknown masses, shapes, forces and API behavior explicit. A synthetic pass is not an in-game pass.
 

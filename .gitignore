@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .ruff_cache/
+agent/headless/.gradle/
+agent/headless/build/
+agent/headless/run/
 
 # Generated reports and packages
 agent-results/

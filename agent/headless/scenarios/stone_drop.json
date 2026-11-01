@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "name": "real Sable two-block drop",
+  "duration_ticks": 240,
+  "sample_every": 2,
+  "expect_min_sublevels": 1,
+  "stop_server": true,
+  "commands": [
+    {
+      "tick": 20,
+      "command": "forceload add 0 0",
+      "require_success": true
+    },
+    {
+      "tick": 40,
+      "command": "fill 0 200 0 1 200 0 minecraft:stone",
+      "require_success": true
+    },
+    {
+      "tick": 41,
+      "command": "sable assemble area 0 200 0 1 200 0",
+      "require_success": true
+    }
+  ]
+}

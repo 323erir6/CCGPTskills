@@ -58,6 +58,12 @@ Build the uploadable archive with `python agent/scripts/build_chatgpt_bundle.py`
 - `agent/sim/native_rapier.py` extracts the original native library **from your own Sable JAR**; no native binaries or mod jars are committed.
 - `agent/sim/native_rocket.py` integrates Photomancy six-block rocket shapes and source-informed mod force adapters with original native rigid-body and voxel contact solver. The native solver is real but force provider and collision shape fidelity remains incomplete.
 
+## Real NeoForge/Sable dedicated server
+
+- [English setup and fidelity boundary](docs/en/headless-sable-server.md).
+- [Русская инструкция и границы точности](docs/ru/headless-sable-server.md).
+- `agent/headless/` is a server-only telemetry mod; `agent/scripts/run_headless_sable.py` launches an isolated real-server scenario with the selected instance's ordinary mod JARs.
+
 ## Source-audited rocket physics (installed JAR bytecode)
 
 - [Exact-jar rocket source audit (EN)](docs/en/rocket-jar-source-audit.md)
