@@ -64,3 +64,10 @@ Run: `lua5.3 agent/sim/run.lua agent/scenarios/falling_block.lua`.
 ### Sable modpack mass tags / Точна маса блоків
 
 `agent/sim/rocket_mass_registry.py` resolves installed-JAR nested block tags and source-defined Sable mass rules. The two symmetric sails have mass 0.25; the other four rocket blocks use default 1.0, totaling 4.5. The resulting inertia tensor is (17.875, 17.875, 0.750). These are the installed-JAR baseline values; custom datapacks may override. `agent/tests/test_rocket_mass_registry.py` verifies both constructed fixtures and original JARs when available. The native model still does not execute the original NeoForge server block entities.
+
+## OSPREY Minecraft flight-test prototype
+
+- [OSPREY construction, CC:Sable controller, Synaxis flaps, pocket CC operator and CC:AR HUD](projects/osprey/README.md)
+- [Generated Create structure schematic](projects/osprey/schematics/OSPREY_Create.nbt) / [reproducible generator](projects/osprey/tools/build_schematic.py)
+- [Machine-readable verification status](projects/osprey/reports/status.json)
+- **Scope:** inert gameplay flight-test airframe; no explosives, no automatic payload actuation. The requested 20–600 km Minecraft range and full target tracking are NOT verified. Live physical assembly and mod-side flight tests remain required.

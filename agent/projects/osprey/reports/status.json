@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "project": "OSPREY Minecraft flight-test prototype v0.1",
+  "scope": "inert in-game research vehicle",
+  "requested_range_m": [20000, 600000],
+  "verified_range_m": null,
+  "modes": ["marker", "observed_in_game_track"],
+  "mod_versions": {
+    "minecraft": "1.21.1", "neoforge": true,
+    "createpropulsion": "1.1.5", "synaxis": "1.5.0",
+    "neoperipheral": "1.4ve", "cc_ar": "0.2.1", "cc_sable": "1.3.4"
+  },
+  "tests": {"schematic_roundtrip": "pass", "mocked_lua": "pass", "synthetic_runtime": "pass", "in_game_flight": "not_run", "native_rapier_complete_airframe": "not_run"},
+  "limits": ["not an assembled Sable blueprint", "unverified physical flap installation", "unverified flight envelope", "unverified radar response schema", "no payload or detonation"],
+  "safety_defaults": {"allow_control": false, "post_ignition_shutdown_assumed": false}
+}

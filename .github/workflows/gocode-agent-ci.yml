@@ -58,6 +58,12 @@ jobs:
           javac -d /tmp/gocode-native-classes $(find agent/native/src -name '*.java')
       - name: Check optional native Rapier integration contract
         run: python3 -m unittest agent.tests.test_native_rapier_bridge -v
+      - name: OSPREY Create schematic and CC flight-test checks
+        run: |
+          python3 -m unittest agent.projects.osprey.tests.test_build agent.projects.osprey.tests.test_runtime -v
+          lua5.3 agent/projects/osprey/tests/test_common.lua
+          (cd agent/projects/osprey/lua && lua5.3 ../tests/test_onboard.lua)
+          python3 agent/projects/osprey/tools/build_schematic.py --out agent-results/OSPREY_Create.nbt --layout agent-results/osprey-layout.json
       - name: Run deterministic benchmark
         run: python3 agent/scripts/benchmark.py --output agent-results/benchmark.json
       - name: Static Lua review
