@@ -102,3 +102,7 @@ Treat `verified`, `partial`, `blocked` and `not tested` as different outcomes. D
 ## 12. Versioned text-only simulation world
 
 The incremental voxel, rigid-body and CC:Tweaked simulator has an independent [English specification](simulator.md) and a machine-readable [coverage manifest](../../sim/coverage.json). Its physics are explicitly approximate. It is used for reproducible regression tests, not as proof of live Minecraft compatibility.
+
+## 13. Original native Sable Rapier integration
+
+See [Sable 2.0.5 native JNI bridge](native-sable-rapier.md) for actual voxel contact and rigid-body physics execution. Native physics is tested separately from approximate mod behavior; an in-game equality claim requires an end-to-end server trace.

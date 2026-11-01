@@ -43,3 +43,11 @@ Run: `lua5.3 agent/sim/run.lua agent/scenarios/falling_block.lua`.
 - [Complete machine-readable block registry](sim/mod_devices_manifest.json.gz) (gzip-compressed JSON; actual installed modpack, 11,149 IDs, 51 modeled)
 - CLI example: `python3 -m agent.sim.mod_cli agent/scenarios/mod_blocks.json --out agent-results/mod_blocks.json`.
 - The registry includes unknown/decorative blocks; **51 behavioral models does not imply full mod compatibility**.
+
+## Original Sable 2.0.5 native Rapier (no graphics)
+
+- [Full native JNI bridge setup and compatibility limits](native/README.md).
+- [English: verified contact solver, limitations, instructions](docs/en/native-sable-rapier.md).
+- [Русский: подключение Sable Rapier и ограничения](docs/ru/native-sable-rapier.md).
+- `agent/sim/native_rapier.py` extracts the original native library **from your own Sable JAR**; no native binaries or mod jars are committed.
+- `agent/sim/native_rocket.py` integrates Photomancy six-block rocket shapes and source-informed mod force adapters with original native rigid-body and voxel contact solver. The native solver is real but force provider and collision shape fidelity remains incomplete.

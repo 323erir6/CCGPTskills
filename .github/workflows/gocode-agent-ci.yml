@@ -52,6 +52,12 @@ jobs:
         run: |
           python3 -m unittest agent.tests.test_mod_devices agent.tests.test_mod_auxiliary agent.tests.test_mod_forces agent.tests.test_mod_manifest -v
           python3 -m agent.sim.mod_cli agent/scenarios/mod_blocks.json --out agent-results/mod_blocks.json
+      - name: Compile original-Sable JNI bridge source
+        run: |
+          mkdir -p /tmp/gocode-native-classes
+          javac -d /tmp/gocode-native-classes $(find agent/native/src -name '*.java')
+      - name: Check optional native Rapier integration contract
+        run: python3 -m unittest agent.tests.test_native_rapier_bridge -v
       - name: Run deterministic benchmark
         run: python3 agent/scripts/benchmark.py --output agent-results/benchmark.json
       - name: Static Lua review
