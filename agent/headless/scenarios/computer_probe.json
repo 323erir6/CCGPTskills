@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "name": "real CC:Tweaked computer discovery",
+  "duration_ticks": 40,
+  "sample_every": 2,
+  "expect_min_sublevels": 0,
+  "stop_server": true,
+  "commands": [
+    {
+      "tick": 5,
+      "command": "forceload add 0 0",
+      "require_success": true
+    },
+    {
+      "tick": 10,
+      "command": "setblock 0 80 0 computercraft:computer_advanced",
+      "require_success": true
+    },
+    {
+      "tick": 11,
+      "command": "setblock 1 80 0 computercraft:speaker",
+      "require_success": true
+    }
+  ],
+  "block_probes": [
+    {
+      "id": "controller",
+      "dimension": "minecraft:overworld",
+      "pos": [0, 80, 0],
+      "expected_block": "computercraft:computer_advanced",
+      "from_tick": 12,
+      "required": true,
+      "activate_computer": true,
+      "turn_on": true,
+      "expected_peripheral_types": ["speaker"]
+    }
+  ]
+}

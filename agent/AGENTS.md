@@ -84,6 +84,12 @@ Before substantial work inspect `agent/context/` templates when instantiated by 
 
 GitHub Actions is a build/test executor, not a GPT inference engine. A fully automated multi-commit reasoning loop requires a separate runner and model access, not provided by this repository. Live iterations use the GitHub connector and active conversation tools. A mock is not equivalent to the actual game engine.
 
+## Autonomous technical-specification projects
+
+When `skills/autonomous-minecraft-project/SKILL.md` is selected, its project manifest and evidence gate control completion independently of the optional `gocode` trigger. Continue from specification through real isolated-server qualification. Schematics remain human-authored inputs: inspect them and report exact defects, but do not silently repair or replace them.
+
+A CC:Tweaked computer and peripheral must be face-adjacent or connected through one wired-modem network, with the complete link on one Sable physical construction. Diagonal adjacency and cross-construction proximity are invalid. Confirm wired peripherals and their methods at runtime.
+
 ## Text-only simulator for agent verification
 
 Before implementing a complex CC:Tweaked control program, use `agent/sim/` to reproduce **deterministic** motion, timing and peripheral scenarios where applicable, then check the exact source-version API manifest. Treat `agent/sim/coverage.json` as the explicit implemented/unimplemented boundary. The synthetic body model is not Minecraft 1.21.1, Rapier, Sable 2.0.5 or any mod's executable code. Do not silently promote simulator checks to in-game verification.

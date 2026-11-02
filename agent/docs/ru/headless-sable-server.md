@@ -9,10 +9,13 @@
 ```powershell
 python agent/scripts/run_headless_sable.py agent/headless/scenarios/stone_drop.json `
   --instance "C:\path\to\ElyPrismLauncher\instances\6.9.3" `
-  --gradlew "C:\path\to\neoforge-project\gradlew.bat" `
   --java-home "C:\path\to\jdk-21" `
   --mode full
 ```
+
+Репозиторий автоматически использует собственный Gradle wrapper 8.14.2. Параметр `--gradlew` нужен только для явной замены launcher-а.
+
+`--blueprint name=path` копирует проверенную схему Photomancy v1 в изолированный сервер, после чего сценарий может выполнить `sablebp load name`. `block_probes` проверяет блоки и получает ID компьютеров CC:Tweaked. Параметр `--computer-programs` устанавливает Lua-файлы в известные ID только внутри изолированного тестового мира. Для удалённой проводной периферии Lua-программа всё равно обязана проверить `peripheral.getNames` и `peripheral.getMethods`.
 
 Запускатель намеренно принимает только version-pinned основу `6.9.3`. `--mode minimal` загружает только Sable для диагностики. `--mode full` передаёт NeoForge все серверные `.jar` этого инстанса. Чисто клиентские renderer/UI-файлы из `server-excluded-mods.txt` и файлы `.disabled` не загружаются: они не участвуют в dedicated-server физике. Мир, логи, копии конфигов, хеши модов и JSON-телеметрия сохраняются в `agent-results/` и не попадают в Git.
 

@@ -7,6 +7,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
@@ -14,6 +15,8 @@ import time
 
 
 ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 HEADLESS_PROJECT = ROOT / "agent/headless"
 SERVER_EXCLUSIONS = HEADLESS_PROJECT / "server-excluded-mods.txt"
 EXPECTED_COMPONENTS = {
@@ -21,6 +24,26 @@ EXPECTED_COMPONENTS = {
     "net.neoforged": "21.1.248",
 }
 EXPECTED_INSTANCE_NAME = "6.9.3"
+BLUEPRINT_NAME = re.compile(r"^[a-z0-9][a-z0-9_-]{0,63}$")
+
+
+def resolve_gradle_wrapper(explicit: Path | None = None) -> Path:
+    """Return an explicit or repository-owned Gradle launcher."""
+    if explicit is not None:
+        candidate = Path(explicit).resolve()
+        if not candidate.is_file():
+            raise FileNotFoundError(f"Gradle launcher does not exist: {candidate}")
+        return candidate
+    name = "gradlew.bat" if os.name == "nt" else "gradlew"
+    candidate = HEADLESS_PROJECT / name
+    if candidate.is_file():
+        return candidate.resolve()
+    system_gradle = shutil.which("gradle")
+    if system_gradle:
+        return Path(system_gradle).resolve()
+    raise FileNotFoundError(
+        "missing Gradle launcher; restore agent/headless/gradlew or pass --gradlew"
+    )
 
 
 def load_scenario(path: Path) -> dict:
@@ -30,6 +53,7 @@ def load_scenario(path: Path) -> dict:
     duration = value.get("duration_ticks", 200)
     sample_every = value.get("sample_every", 1)
     commands = value.get("commands", [])
+    probes = value.get("block_probes", [])
     if type(duration) is not int or not 1 <= duration <= 12_000:
         raise ValueError("duration_ticks must be between 1 and 12000")
     if type(sample_every) is not int or not 1 <= sample_every <= duration:
@@ -44,6 +68,26 @@ def load_scenario(path: Path) -> dict:
             raise ValueError("invalid server command")
         if not 0 <= command["tick"] < duration:
             raise ValueError("command tick must be inside the scenario")
+    if not isinstance(probes, list) or len(probes) > 256:
+        raise ValueError("block_probes must be a list with at most 256 entries")
+    for probe in probes:
+        if not isinstance(probe, dict) or not isinstance(probe.get("id"), str):
+            raise ValueError("every block probe needs a string id")
+        position = probe.get("pos")
+        if (not isinstance(position, list) or len(position) != 3
+                or not all(type(item) is int for item in position)):
+            raise ValueError("every block probe needs three integer coordinates")
+        from_tick = probe.get("from_tick", 0)
+        if type(from_tick) is not int or not 0 <= from_tick < duration:
+            raise ValueError("block probe from_tick must be inside the scenario")
+        if "activate_computer" in probe and type(probe["activate_computer"]) is not bool:
+            raise ValueError("block probe activate_computer must be a boolean")
+        if "turn_on" in probe and type(probe["turn_on"]) is not bool:
+            raise ValueError("block probe turn_on must be a boolean")
+        expected_peripherals = probe.get("expected_peripheral_types", [])
+        if (not isinstance(expected_peripherals, list) or len(expected_peripherals) > 6
+                or not all(isinstance(item, str) and item for item in expected_peripherals)):
+            raise ValueError("block probe expected_peripheral_types must contain at most six strings")
     return value
 
 
@@ -137,6 +181,74 @@ view-distance=5
     (run_dir / "server.properties").write_text(properties, encoding="utf-8")
 
 
+def stage_blueprints(values: list[str], run_dir: Path) -> list[dict]:
+    """Copy validated Photomancy blueprints into the server's command directory."""
+    if len(values) > 64:
+        raise ValueError("at most 64 --blueprint entries are allowed")
+    target_directory = run_dir / "sable-headless-world/sable_blueprints"
+    records = []
+    if values:
+        from agent.sim.schematics import load
+        target_directory.mkdir(parents=True, exist_ok=True)
+    for value in values:
+        if "=" not in value:
+            raise ValueError("--blueprint must use name=path")
+        name, source_value = value.split("=", 1)
+        name = name.strip().lower()
+        if not BLUEPRINT_NAME.fullmatch(name):
+            raise ValueError(f"invalid blueprint name: {name!r}")
+        source = Path(source_value).expanduser().resolve()
+        if not source.is_file():
+            raise FileNotFoundError(f"blueprint does not exist: {source}")
+        parsed = load(source)
+        if parsed["format"] != "sable_photomancy_v1":
+            raise ValueError(f"sablebp load requires a Photomancy v1 blueprint: {source}")
+        target = target_directory / f"{name}.nbt"
+        shutil.copy2(source, target)
+        records.append({"name": name, "source": str(source), "target": str(target),
+                        "sha256": sha256(source), "constructs": len(parsed["constructs"])})
+    return records
+
+
+def stage_computer_programs(manifest_path: Path | None, run_dir: Path) -> list[dict]:
+    """Install bounded Lua trees into known CC:Tweaked computer IDs."""
+    if manifest_path is None:
+        return []
+    manifest_path = Path(manifest_path).resolve()
+    value = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if not isinstance(value, dict) or value.get("schema_version") != 1:
+        raise ValueError("computer program manifest schema_version must be 1")
+    entries = value.get("computers")
+    if not isinstance(entries, list) or len(entries) > 128:
+        raise ValueError("computer program manifest must contain at most 128 computers")
+    records = []
+    for index, entry in enumerate(entries):
+        if not isinstance(entry, dict) or type(entry.get("id")) is not int or entry["id"] < 0:
+            raise ValueError(f"computers[{index}] requires a nonnegative integer id")
+        source_value = entry.get("source")
+        if not isinstance(source_value, str) or not source_value:
+            raise ValueError(f"computers[{index}].source is required")
+        source = Path(source_value)
+        if not source.is_absolute():
+            source = manifest_path.parent / source
+        source = source.resolve()
+        if not source.is_dir():
+            raise FileNotFoundError(f"computer source directory does not exist: {source}")
+        paths = list(source.rglob("*"))
+        if any(path.is_symlink() for path in paths):
+            raise ValueError("computer program trees may not contain symbolic links")
+        files = [path for path in paths if path.is_file()]
+        if len(files) > 256 or sum(path.stat().st_size for path in files) > 4 * 1024 * 1024:
+            raise ValueError(f"computer {entry['id']} program tree exceeds safety limits")
+        target = run_dir / "sable-headless-world/computercraft/computer" / str(entry["id"])
+        if target.exists():
+            shutil.rmtree(target)
+        shutil.copytree(source, target)
+        records.append({"id": entry["id"], "source": str(source), "target": str(target),
+                        "files": len(files)})
+    return records
+
+
 def tail(path: Path, count: int = 120) -> str:
     if not path.is_file():
         return ""
@@ -151,6 +263,13 @@ def run_server(args) -> tuple[int, dict | None, Path]:
     prepare_run(instance, run_dir, reuse=args.reuse_run, world=args.world)
     results = run_dir / "agent-results"
     results.mkdir(parents=True, exist_ok=True)
+    blueprints = stage_blueprints(args.blueprint, run_dir)
+    computer_programs = stage_computer_programs(args.computer_programs, run_dir)
+    (results / "staged-inputs.json").write_text(json.dumps({
+        "schema_version": 1,
+        "blueprints": blueprints,
+        "computer_programs": computer_programs,
+    }, indent=2) + "\n", encoding="utf-8")
     report_path = results / "headless-report.json"
     if report_path.exists():
         archived = results / f"headless-report-{time.time_ns()}.previous.json"
@@ -173,7 +292,7 @@ def run_server(args) -> tuple[int, dict | None, Path]:
         environment["JAVA_HOME"] = str(args.java_home.resolve())
         environment["PATH"] = str(args.java_home.resolve() / "bin") + os.pathsep + environment.get("PATH", "")
 
-    command = [str(args.gradlew.resolve()), "-p", str(HEADLESS_PROJECT),
+    command = [str(resolve_gradle_wrapper(args.gradlew)), "-p", str(HEADLESS_PROJECT),
                "runServer", "--no-daemon", "--console=plain"]
     log_path = results / "server.log"
     started = time.monotonic()
@@ -204,6 +323,8 @@ def run_server(args) -> tuple[int, dict | None, Path]:
         "elapsed_seconds": round(time.monotonic() - started, 3),
         "mode": args.mode,
         "mod_jars": len(manifest),
+        "blueprints": len(blueprints),
+        "computer_programs": len(computer_programs),
         "report": str(report_path),
         "log": str(log_path),
         "status": report.get("status") if report else "missing_report",
@@ -219,12 +340,16 @@ def main(argv=None) -> int:
     parser.add_argument("scenario", type=Path)
     parser.add_argument("--instance", type=Path, required=True,
                         help="ElyPrism instance containing mmc-pack.json and minecraft/mods")
-    parser.add_argument("--gradlew", type=Path, required=True,
-                        help="an existing Gradle wrapper compatible with this project")
+    parser.add_argument("--gradlew", type=Path,
+                        help="optional Gradle launcher; defaults to agent/headless/gradlew")
     parser.add_argument("--java-home", type=Path)
     parser.add_argument("--run-dir", type=Path, default=ROOT / "agent-results/headless-run")
     parser.add_argument("--world", type=Path,
                         help="optional existing world save to copy into the isolated server")
+    parser.add_argument("--blueprint", action="append", default=[], metavar="NAME=PATH",
+                        help="stage a human-authored Photomancy v1 blueprint for 'sablebp load NAME'")
+    parser.add_argument("--computer-programs", type=Path,
+                        help="JSON manifest mapping known CC:Tweaked computer IDs to Lua directories")
     parser.add_argument("--mode", choices=("full", "minimal"), default="full")
     parser.add_argument("--timeout", type=float, default=900)
     parser.add_argument("--reuse-run", action="store_true")

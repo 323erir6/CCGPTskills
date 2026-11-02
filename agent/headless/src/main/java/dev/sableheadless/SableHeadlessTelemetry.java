@@ -13,8 +13,11 @@ import dev.ryanhcode.sable.companion.math.BoundingBox3dc;
 import dev.ryanhcode.sable.companion.math.Pose3dc;
 import dev.ryanhcode.sable.sublevel.ServerSubLevel;
 import dev.ryanhcode.sable.sublevel.SubLevel;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.common.NeoForge;
@@ -32,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.lang.reflect.Method;
 import org.joml.Quaterniondc;
 import org.joml.Vector3dc;
 
@@ -99,6 +103,45 @@ public final class SableHeadlessTelemetry {
         }
     }
 
+    private record BlockProbe(String id, String dimension, BlockPos position, String expectedBlock,
+                              int fromTick, boolean required, boolean activateComputer, boolean turnOn,
+                              List<String> expectedPeripheralTypes) {
+        private static BlockProbe parse(JsonObject value, int duration) {
+            String id = value.get("id").getAsString().trim();
+            String dimension = value.has("dimension")
+                    ? value.get("dimension").getAsString().trim() : "minecraft:overworld";
+            JsonArray pos = value.getAsJsonArray("pos");
+            String expected = value.has("expected_block")
+                    ? value.get("expected_block").getAsString().trim() : "";
+            int fromTick = value.has("from_tick") ? value.get("from_tick").getAsInt() : 0;
+            boolean required = !value.has("required") || value.get("required").getAsBoolean();
+            boolean activateComputer = value.has("activate_computer")
+                    && value.get("activate_computer").getAsBoolean();
+            boolean turnOn = value.has("turn_on") && value.get("turn_on").getAsBoolean();
+            List<String> expectedPeripheralTypes = new ArrayList<>();
+            JsonArray expectedPeripherals = value.has("expected_peripheral_types")
+                    ? value.getAsJsonArray("expected_peripheral_types") : new JsonArray();
+            if (expectedPeripherals.size() > 6) {
+                throw new IllegalArgumentException("at most six direct peripheral types are allowed");
+            }
+            for (JsonElement element : expectedPeripherals) {
+                String type = element.getAsString().trim();
+                if (type.isEmpty() || type.length() > 128) {
+                    throw new IllegalArgumentException("invalid expected peripheral type");
+                }
+                expectedPeripheralTypes.add(type);
+            }
+            if (id.isEmpty() || id.length() > 128 || dimension.isEmpty() || pos == null || pos.size() != 3
+                    || fromTick < 0 || fromTick >= duration) {
+                throw new IllegalArgumentException("invalid block probe");
+            }
+            return new BlockProbe(id, dimension,
+                    new BlockPos(pos.get(0).getAsInt(), pos.get(1).getAsInt(), pos.get(2).getAsInt()),
+                    expected, fromTick, required, activateComputer, turnOn,
+                    List.copyOf(expectedPeripheralTypes));
+        }
+    }
+
     private static final class Scenario {
         private final String name;
         private final int durationTicks;
@@ -106,15 +149,17 @@ public final class SableHeadlessTelemetry {
         private final int expectMinSublevels;
         private final boolean stopServer;
         private final List<ScheduledCommand> commands;
+        private final List<BlockProbe> blockProbes;
 
         private Scenario(String name, int durationTicks, int sampleEvery, int expectMinSublevels,
-                         boolean stopServer, List<ScheduledCommand> commands) {
+                         boolean stopServer, List<ScheduledCommand> commands, List<BlockProbe> blockProbes) {
             this.name = name;
             this.durationTicks = durationTicks;
             this.sampleEvery = sampleEvery;
             this.expectMinSublevels = expectMinSublevels;
             this.stopServer = stopServer;
             this.commands = commands;
+            this.blockProbes = blockProbes;
         }
 
         private static Scenario load(Path path) throws IOException {
@@ -139,7 +184,15 @@ public final class SableHeadlessTelemetry {
             if (!commands.isEmpty() && commands.getLast().tick >= duration) {
                 throw new IllegalArgumentException("command tick must be below duration_ticks");
             }
-            return new Scenario(name, duration, sampleEvery, expectMin, stopServer, List.copyOf(commands));
+            List<BlockProbe> probes = new ArrayList<>();
+            JsonArray probeArray = root.has("block_probes")
+                    ? root.getAsJsonArray("block_probes") : new JsonArray();
+            if (probeArray.size() > 256) throw new IllegalArgumentException("at most 256 block probes are allowed");
+            for (JsonElement element : probeArray) {
+                probes.add(BlockProbe.parse(element.getAsJsonObject(), duration));
+            }
+            return new Scenario(name, duration, sampleEvery, expectMin, stopServer,
+                    List.copyOf(commands), List.copyOf(probes));
         }
     }
 
@@ -153,6 +206,7 @@ public final class SableHeadlessTelemetry {
         private int tick;
         private boolean finished;
         private int maximumSublevels;
+        private boolean requiredProbeFailed;
 
         private Session(MinecraftServer server, Scenario scenario, Path output) {
             this.server = server;
@@ -189,9 +243,15 @@ public final class SableHeadlessTelemetry {
                 }
             }
             if (tick % scenario.sampleEvery == 0 || tick == scenario.durationTicks - 1) {
-                JsonObject sample = capture(server, tick);
+                JsonObject sample = capture(server, tick, scenario.blockProbes);
                 samples.add(sample);
                 maximumSublevels = Math.max(maximumSublevels, sample.get("sublevel_count").getAsInt());
+                for (JsonElement element : sample.getAsJsonArray("block_probes")) {
+                    JsonObject probe = element.getAsJsonObject();
+                    if (probe.get("required").getAsBoolean() && !probe.get("passed").getAsBoolean()) {
+                        requiredProbeFailed = true;
+                    }
+                }
             }
             tick++;
             if (tick >= scenario.durationTicks) complete();
@@ -200,11 +260,12 @@ public final class SableHeadlessTelemetry {
         private void complete() {
             if (finished) return;
             finished = true;
-            boolean passed = maximumSublevels >= scenario.expectMinSublevels;
+            boolean passed = maximumSublevels >= scenario.expectMinSublevels && !requiredProbeFailed;
             report.addProperty("status", passed ? "passed" : "failed");
             report.addProperty("ticks_executed", tick);
             report.addProperty("maximum_sublevels", maximumSublevels);
             report.addProperty("expected_min_sublevels", scenario.expectMinSublevels);
+            report.addProperty("required_block_probe_failed", requiredProbeFailed);
             report.addProperty("fidelity", "live-server-executed; exact only for the recorded mod/config/world inputs");
             write();
             activeSession = null;
@@ -250,7 +311,7 @@ public final class SableHeadlessTelemetry {
         return result;
     }
 
-    private static JsonObject capture(MinecraftServer server, int scenarioTick) {
+    private static JsonObject capture(MinecraftServer server, int scenarioTick, List<BlockProbe> probes) {
         JsonObject sample = new JsonObject();
         sample.addProperty("scenario_tick", scenarioTick);
         sample.addProperty("server_tick", server.getTickCount());
@@ -266,7 +327,116 @@ public final class SableHeadlessTelemetry {
         }
         sample.addProperty("sublevel_count", total);
         sample.add("dimensions", dimensions);
+        JsonArray blockProbes = new JsonArray();
+        for (BlockProbe probe : probes) {
+            if (scenarioTick >= probe.fromTick) blockProbes.add(captureBlockProbe(server, probe));
+        }
+        sample.add("block_probes", blockProbes);
         return sample;
+    }
+
+    private static JsonObject captureBlockProbe(MinecraftServer server, BlockProbe probe) {
+        JsonObject result = new JsonObject();
+        result.addProperty("id", probe.id);
+        result.addProperty("dimension", probe.dimension);
+        result.add("pos", blockPosition(probe.position));
+        result.addProperty("required", probe.required);
+        ServerLevel target = null;
+        for (ServerLevel level : server.getAllLevels()) {
+            if (level.dimension().location().toString().equals(probe.dimension)) {
+                target = level;
+                break;
+            }
+        }
+        if (target == null) {
+            result.addProperty("passed", false);
+            result.addProperty("error", "dimension is not loaded");
+            return result;
+        }
+        if (!target.isLoaded(probe.position)) {
+            result.addProperty("passed", false);
+            result.addProperty("error", "chunk is not loaded");
+            return result;
+        }
+        String blockId = BuiltInRegistries.BLOCK.getKey(target.getBlockState(probe.position).getBlock()).toString();
+        result.addProperty("block", blockId);
+        boolean passed = probe.expectedBlock.isEmpty() || probe.expectedBlock.equals(blockId);
+        result.addProperty("passed", passed);
+        if (!probe.expectedBlock.isEmpty()) result.addProperty("expected_block", probe.expectedBlock);
+        BlockEntity blockEntity = target.getBlockEntity(probe.position);
+        if (blockEntity != null) {
+            result.addProperty("block_entity_type",
+                    BuiltInRegistries.BLOCK_ENTITY_TYPE.getKey(blockEntity.getType()).toString());
+            captureComputer(blockEntity, result, probe.activateComputer, probe.turnOn);
+        }
+        if (!probe.expectedPeripheralTypes.isEmpty()) {
+            JsonArray peripherals = result.has("direct_peripherals")
+                    ? result.getAsJsonArray("direct_peripherals") : new JsonArray();
+            List<String> actual = new ArrayList<>();
+            for (JsonElement element : peripherals) {
+                actual.add(element.getAsJsonObject().get("type").getAsString());
+            }
+            JsonArray missing = new JsonArray();
+            for (String expected : probe.expectedPeripheralTypes) {
+                if (!actual.contains(expected)) missing.add(expected);
+            }
+            if (!missing.isEmpty()) {
+                result.addProperty("passed", false);
+                result.add("missing_peripheral_types", missing);
+            }
+        }
+        return result;
+    }
+
+    private static void captureComputer(BlockEntity blockEntity, JsonObject result,
+                                        boolean activateComputer, boolean turnOn) {
+        try {
+            Method getComputerId = blockEntity.getClass().getMethod("getComputerID");
+            Method getLabel = blockEntity.getClass().getMethod("getLabel");
+            Method getServerComputer = blockEntity.getClass().getMethod("getServerComputer");
+            int computerId = ((Number) getComputerId.invoke(blockEntity)).intValue();
+            Object label = getLabel.invoke(blockEntity);
+            if (label != null) result.addProperty("computer_label", String.valueOf(label));
+            Object computer = getServerComputer.invoke(blockEntity);
+            if (computer == null && activateComputer) {
+                computer = blockEntity.getClass().getMethod("createServerComputer").invoke(blockEntity);
+                computerId = ((Number) getComputerId.invoke(blockEntity)).intValue();
+                result.addProperty("computer_activated_for_discovery", true);
+            }
+            result.addProperty("computer_id", computerId);
+            if (computer == null) return;
+            if (turnOn) {
+                computer.getClass().getMethod("turnOn").invoke(computer);
+                result.addProperty("computer_turn_on_requested", true);
+            }
+            result.addProperty("computer_on", (Boolean) computer.getClass().getMethod("isOn").invoke(computer));
+            Class<?> sideClass = Class.forName("dan200.computercraft.core.computer.ComputerSide");
+            Method getPeripheral = computer.getClass().getMethod("getPeripheral", sideClass);
+            Method sideName = sideClass.getMethod("getName");
+            JsonArray peripherals = new JsonArray();
+            for (Object side : sideClass.getEnumConstants()) {
+                Object peripheral = getPeripheral.invoke(computer, side);
+                if (peripheral == null) continue;
+                JsonObject entry = new JsonObject();
+                entry.addProperty("side", String.valueOf(sideName.invoke(side)));
+                entry.addProperty("type", String.valueOf(peripheral.getClass().getMethod("getType").invoke(peripheral)));
+                peripherals.add(entry);
+            }
+            result.add("direct_peripherals", peripherals);
+        } catch (ClassNotFoundException | NoSuchMethodException ignored) {
+            // Not a CC:Tweaked computer block entity in this exact runtime.
+        } catch (ReflectiveOperationException error) {
+            result.addProperty("computer_probe_error", error.getClass().getSimpleName()
+                    + ": " + String.valueOf(error.getMessage()));
+        }
+    }
+
+    private static JsonArray blockPosition(BlockPos value) {
+        JsonArray result = new JsonArray();
+        result.add(value.getX());
+        result.add(value.getY());
+        result.add(value.getZ());
+        return result;
     }
 
     private static JsonArray captureLevel(ServerLevel level) {

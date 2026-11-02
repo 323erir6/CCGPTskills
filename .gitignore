@@ -14,6 +14,7 @@ dist/
 
 # Local native dependencies and game archives
 *.jar
+!agent/headless/gradle/wrapper/gradle-wrapper.jar
 *.so
 *.dll
 *.dylib

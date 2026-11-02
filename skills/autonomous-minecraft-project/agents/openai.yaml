@@ -1,0 +1,6 @@
+interface:
+  display_name: "Autonomous Minecraft Project"
+  short_description: "Develop and live-test projects from a spec"
+  default_prompt: "Use $autonomous-minecraft-project to implement and qualify this modded Minecraft project from its technical specification."
+policy:
+  allow_implicit_invocation: true
