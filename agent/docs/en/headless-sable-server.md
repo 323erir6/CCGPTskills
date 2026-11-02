@@ -9,10 +9,48 @@ The headless path runs an actual NeoForge 21.1.248 dedicated server with Minecra
 ```powershell
 python agent/scripts/run_headless_sable.py agent/headless/scenarios/stone_drop.json `
   --instance "C:\path\to\ElyPrismLauncher\instances\6.9.3" `
-  --gradlew "C:\path\to\another-neoforge-project\gradlew.bat" `
   --java-home "C:\path\to\jdk-21" `
   --mode full
 ```
+
+The repository-owned Gradle 8.14.2 wrapper is selected automatically. `--gradlew` remains available only as an explicit override.
+
+## Autonomous blueprint and computer staging
+
+Stage a human-authored Photomancy v1 blueprint in the isolated world's `sable_blueprints` directory with `--blueprint name=path`. A scenario can then place it through the real installed Sable command, for example `execute positioned 0 100 0 run sablebp load vehicle`. The launcher validates the NBT format and records its hash in `agent-results/staged-inputs.json`.
+
+When computer IDs are known from the schematic or an initial discovery run, `--computer-programs computers.json` copies bounded Lua directory trees into the isolated world's CC:Tweaked filesystems before startup:
+
+```json
+{
+  "schema_version": 1,
+  "computers": [
+    {"id": 42, "source": "lua/controller"}
+  ]
+}
+```
+
+Paths are relative to the computer manifest. Each source directory is limited to 256 files and 4 MiB. This replaces files only inside the isolated test world.
+
+A scenario may declare bounded `block_probes`. They verify a block after a selected tick and, for a CC:Tweaked computer, record its runtime computer ID, label, power state and directly attached peripheral types:
+
+```json
+{
+  "id": "controller",
+  "dimension": "minecraft:overworld",
+  "pos": [0, 100, 0],
+  "expected_block": "computercraft:computer_advanced",
+  "from_tick": 20,
+  "required": true,
+  "activate_computer": true,
+  "turn_on": true,
+  "expected_peripheral_types": ["speaker"]
+}
+```
+
+`activate_computer` creates the server-side CC computer when an unstarted block still has ID `-1`, allowing the discovery run to assign and persist an ID. `turn_on` boots it in the isolated world. `expected_peripheral_types` makes missing face-adjacent peripherals fail the scenario instead of merely appearing in telemetry.
+
+Use a first discovery run when placement assigns a new computer ID, stage its Lua tree, then run the qualification scenario against the same isolated world with `--reuse-run`. Lua itself must confirm remote wired peripherals through `peripheral.getNames` and `peripheral.getMethods`.
 
 The launcher deliberately accepts the `6.9.3` instance as its version-pinned base. Use `--mode minimal` to diagnose Sable itself. `--mode full` places every enabled server-compatible `.jar` from that instance on the NeoForge runtime classpath. Pure client rendering/UI files listed in `server-excluded-mods.txt` and files ending in `.disabled` are never loaded; neither category participates in dedicated-server physics. Generated worlds, logs, copied configurations, JAR hashes and JSON telemetry stay under `agent-results/` and are not committed.
 

@@ -40,9 +40,9 @@ jobs:
           sudo apt-get install -y lua5.3
       - name: Compile Lua files
         run: |
-          find lib tests examples agent/mocks agent/tests agent/sim agent/scenarios agent/projects/osprey -type f -name '*.lua' -print0 | xargs -0 -r -n 1 luac5.3 -p
+          find lib tests examples agent/mocks agent/tests agent/sim agent/scenarios -type f -name '*.lua' -print0 | xargs -0 -r -n 1 luac5.3 -p
       - name: Check Python syntax
-        run: python3 -m compileall -q agent/scripts agent/tests agent/sim agent/projects/osprey
+        run: python3 -m compileall -q agent/scripts agent/tests agent/sim
       - name: Run agent Python unit tests
         run: python3 -m unittest discover -s agent/tests -p 'test_*.py' -v
       - name: Run headless world simulator tests
@@ -63,16 +63,6 @@ jobs:
           javac -d /tmp/gocode-native-classes $(find agent/native/src -name '*.java')
       - name: Check optional native Rapier integration contract
         run: python3 -m unittest agent.tests.test_native_rapier_bridge -v
-      - name: OSPREY Create schematic and CC flight-test checks
-        run: |
-          python3 -m unittest discover -s agent/projects/osprey/tests -p 'test_*.py' -v
-          lua5.3 agent/projects/osprey/tests/test_common.lua
-          (cd agent/projects/osprey/lua && lua5.3 ../tests/test_onboard.lua)
-          (cd agent/projects/osprey/lua && lua5.3 ../tests/test_recorder.lua)
-          (cd agent/projects/osprey/lua && lua5.3 ../tests/test_diagnostics.lua)
-          (cd agent/projects/osprey/lua && lua5.3 ../tests/test_diagnostics_sender.lua)
-          (cd agent/projects/osprey/lua && lua5.3 ../tests/test_diagnostics_receiver.lua)
-          python3 agent/projects/osprey/tools/build_schematic.py --out agent-results/OSPREY_Create.nbt --layout agent-results/osprey-layout.json
       - name: Run deterministic benchmark
         run: python3 agent/scripts/benchmark.py --output agent-results/benchmark.json
       - name: Static Lua review
@@ -118,6 +108,6 @@ jobs:
       - name: Run Windows-safe simulator and runner tests
         shell: pwsh
         run: |
-          python -m unittest agent.tests.test_chat_runner agent.tests.test_chatgpt_bundle agent.tests.test_tools -v
+          python -m unittest agent.tests.test_chat_runner agent.tests.test_chatgpt_bundle agent.tests.test_tools agent.tests.test_autonomous_project agent.tests.test_headless_sable -v
           python -m agent.sim.chat_runner chatgpt/examples/drop_test.json --pretty --out agent-results/chat-drop-windows.json
           python agent/scripts/benchmark.py --skip-unavailable --output agent-results/benchmark-windows.json

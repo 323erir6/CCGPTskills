@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "links": [
+    {
+      "id": "replace-with-link-id",
+      "method": "direct",
+      "computer": {
+        "construct": 0,
+        "pos": [
+          0,
+          0,
+          0
+        ],
+        "block": "computercraft:computer_advanced"
+      },
+      "peripheral": {
+        "construct": 0,
+        "pos": [
+          1,
+          0,
+          0
+        ],
+        "block": "replace:with_actual_block_id"
+      }
+    }
+  ]
+}

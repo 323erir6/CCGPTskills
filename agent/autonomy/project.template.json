@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "project_id": "replace-with-project-id",
+  "technical_spec": "TECHNICAL_SPEC.md",
+  "schematics": [
+    "schematics/main.nbt"
+  ],
+  "connection_contract": "connections.json",
+  "runtime": {
+    "profile": "6.9.3",
+    "minecraft": "1.21.1",
+    "neoforge": "21.1.248",
+    "mode": "full"
+  },
+  "acceptance_criteria": [
+    {
+      "id": "replace-with-criterion",
+      "description": "Replace with one measurable requirement from the technical specification.",
+      "measurement": "Name the measured quantity and its unit.",
+      "pass_condition": "State the numerical tolerance or exact observable result.",
+      "minimum_trials": 1,
+      "required_evidence": [
+        "unit",
+        "live_server"
+      ]
+    }
+  ]
+}

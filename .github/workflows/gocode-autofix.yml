@@ -26,7 +26,6 @@ jobs:
         run: |
           python3 -m compileall -q agent
           python3 -m unittest discover -s agent/tests -p 'test_*.py' -v
-          python3 -m unittest discover -s agent/projects/osprey/tests -p 'test_*.py' -v
       - name: Submit a pull request when files changed
         env:
           GH_TOKEN: ${{ github.token }}

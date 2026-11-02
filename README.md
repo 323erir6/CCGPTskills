@@ -19,10 +19,11 @@ python -m agent.sim.chat_runner chatgpt/examples/drop_test.json --pretty --out r
 
 - [ChatGPT project instructions](chatgpt/en/PROJECT_INSTRUCTIONS.md)
 - [Короткий запуск українською](chatgpt/uk/QUICKSTART.md)
+- [Autonomous project-development skill](skills/autonomous-minecraft-project/SKILL.md)
 - [Reusable Sable simulator skill](skills/sable-simulator/SKILL.md)
 - [Minecraft-only scope in English](docs/en/game-scope.md) / [по-русски](docs/ru/game-scope.md)
 
-Build the single-file upload bundle with `python agent/scripts/build_chatgpt_bundle.py`. GitHub Actions publishes the same ZIP as an artifact. ChatGPT must have Python/data-analysis execution to run the simulator inside a chat; otherwise it can prepare a scenario but must label it as not executed.
+Build the single-file upload bundle with `python agent/scripts/build_chatgpt_bundle.py`. GitHub Actions publishes the same ZIP as an artifact. The bundle includes the autonomous workflow, schematic preflight, evidence gate, real headless runner, telemetry source and pinned Gradle wrapper. A chat still needs process execution, Java 21 and the user-owned 6.9.3 instance to perform live tests; otherwise live criteria must remain not executed.
 
 For the highest local fidelity, [the headless NeoForge runner](agent/docs/en/headless-sable-server.md) starts the real version-pinned 6.9.3 Minecraft 1.21.1 dedicated-server stack with the user's original Sable 2.0.5 and server-compatible mod JARs. It records Sable telemetry and exact JAR hashes instead of reimplementing mod forces.
 

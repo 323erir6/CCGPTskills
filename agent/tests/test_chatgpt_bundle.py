@@ -21,6 +21,9 @@ class TestChatGPTBundle(unittest.TestCase):
                 ).decode("utf-8")
         self.assertIn("Minecraft", instructions)
         self.assertIn("not a request to disable", instructions)
+        self.assertIn("skills/autonomous-minecraft-project/SKILL.md", FILES)
+        self.assertIn("agent/scripts/run_headless_sable.py", FILES)
+        self.assertIn("agent/headless/gradle/wrapper/gradle-wrapper.jar", FILES)
 
 
 if __name__ == "__main__":
